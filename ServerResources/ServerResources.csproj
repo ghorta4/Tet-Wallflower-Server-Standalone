@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Guildleader">
+      <HintPath>..\Guildleader\bin\Debug\netstandard2.0\Guildleader.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

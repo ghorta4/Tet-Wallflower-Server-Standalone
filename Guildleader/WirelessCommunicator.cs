@@ -4,21 +4,101 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Linq;
+using System.Threading;
+using System.Net.NetworkInformation;
 
 namespace Guildleader
 {
-    public static class WirelessCommunicator
+    public abstract class WirelessCommunicator
     {
-        public static UdpClient UDPNode;
+        public List<Exception> errorLog = new List<Exception>();
 
-        public static void Initialize()
+        public static bool abortWirelessCommunications;
+        public static bool WirelessThreadActive { get { return !abortWirelessCommunications; } }
+
+        public UdpClient UDPNode;
+
+        public Queue<DataPacket> packets = new Queue<DataPacket> { };
+
+        public const int defaultPort = 44500;
+
+        public abstract void Initialize();
+
+        Thread wirelessThread;
+        public void StartListeningThread()
         {
-            UDPNode = new UdpClient(44500, AddressFamily.InterNetwork);
-            Console.WriteLine("Wireless communicator initialized.");
+            wirelessThread = new Thread(UDPListeningThread);
+            wirelessThread.Start();
         }
 
-        public static void Cleanup()
+        public void FindVariablePort()
         {
+            List<IPEndPoint> allUsedListeners = new List<IPEndPoint>(IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners());
+            int targetPort = defaultPort;
+            for (int i = 0; i < 100; i++)
+            {
+                bool skipPort = false;
+                targetPort = defaultPort + i;
+                foreach (IPEndPoint ipe in allUsedListeners)
+                {
+                    if (ipe.Port == targetPort)
+                    {
+                        skipPort = true;
+                        break;
+                    }
+                }
+                if (skipPort)
+                {
+                    continue;
+                }
+                UDPNode = new UdpClient(targetPort);
+                break;
+
+            }
+        }
+
+        void UDPListeningThread()
+        {
+            while (!abortWirelessCommunications)
+            {
+                IAsyncResult listen = UDPNode.BeginReceive(null, null);
+                int tries = 0;
+                while (!listen.IsCompleted && WirelessThreadActive && tries <= 1000)
+                {
+                    Thread.Sleep(1);
+                    tries++;
+                }
+                IPEndPoint endpoint = new IPEndPoint(IPAddress.Any, 0);
+                if (!(listen.IsCompleted && WirelessThreadActive))
+                {
+                    try
+                    {
+                        UDPNode.EndReceive(listen, ref endpoint);
+                    }
+                    catch (Exception e)
+                    {
+                        errorLog.Add(e);
+                    }
+
+                    continue;
+                }
+
+                try
+                {
+                    byte[] buffer = UDPNode.EndReceive(listen, ref endpoint);
+                    packets.Enqueue(new DataPacket(endpoint.Address, endpoint.Port, buffer));
+                    Console.WriteLine("Packet get!");
+                }
+                catch (Exception e)
+                {
+                    errorLog.Add(e);
+                }
+            }
+        }
+
+        public void Cleanup()
+        {
+            abortWirelessCommunications = true;
             UDPNode.Close();
             UDPNode.Dispose();
         }
@@ -28,17 +108,18 @@ namespace Guildleader
     {
         public enum packetType
         {
-
+            invalid,
+            testCall,
         }
 
         public IPAddress address;
-        public short port;
+        public int port;
 
         public packetType stowedPacketType;
 
         public byte[] contents;
 
-        public DataPacket(IPAddress addressGiven, short portGiven, byte[] packetBytes)
+        public DataPacket(IPAddress addressGiven, int portGiven, byte[] packetBytes)
         {
             address = addressGiven;
             port = portGiven;

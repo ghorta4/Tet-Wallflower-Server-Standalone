@@ -3,6 +3,7 @@ using Guildleader;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using ServerResources;
 
 namespace PMDMMO_Main
 {
@@ -13,10 +14,14 @@ namespace PMDMMO_Main
 
         static bool pendingErrors;
         static List<Exception> errorLog = new List<Exception>();
+
+        static WirelessCommunicator Server;
+
         static void Main(string[] args)
         {
+            Server = new WirelessServer();
             Console.WriteLine("Server started.");
-            StartupAndEndFunctions.InitializeAll();
+            StartupAndEndFunctions.InitializeAll(Server);
             while (!requestApplicationClosed)
             {
                 MainFunctions.Update();
@@ -25,7 +30,7 @@ namespace PMDMMO_Main
                     requestApplicationClosed = true;
                 }
             }
-            StartupAndEndFunctions.CleanupAll();
+            StartupAndEndFunctions.CleanupAll(Server);
             Console.WriteLine("Server ended. Press any key to continue.");
             Console.ReadKey();
         }
