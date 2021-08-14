@@ -26,7 +26,7 @@ namespace PMDMMO_Main
             Console.ReadKey();
         }
 
-        public static void addErrorToLog(Exception e)
+        public static void AddErrorToLog(Exception e)
         {
             errorLog.Add(e);
             if (!pendingErrors)
@@ -39,6 +39,11 @@ namespace PMDMMO_Main
             {
                 errorLog.RemoveAt(0);
             }
+        }
+
+        public static void EndProgram()
+        {
+            requestApplicationClosed = true;
         }
     }
 }

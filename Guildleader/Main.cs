@@ -20,7 +20,7 @@ namespace Guildleader
     {
         public static void Update()
         {
-            
+            Application.EndProgram();
         }
     }
 }
