@@ -16,12 +16,12 @@ namespace PMDMMO_Main
         static void Main(string[] args)
         {
             Console.WriteLine("Server started.");
-            StartupFunctions.InitializeAll();
+            StartupAndEndFunctions.InitializeAll();
             while (!requestApplicationClosed)
             {
                 MainFunctions.Update();
             }
-
+            StartupAndEndFunctions.CleanupAll();
             Console.WriteLine("Server ended. Press any key to continue.");
             Console.ReadKey();
         }

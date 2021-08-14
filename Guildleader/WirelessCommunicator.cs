@@ -16,6 +16,12 @@ namespace Guildleader
             UDPNode = new UdpClient(44500, AddressFamily.InterNetwork);
             Console.WriteLine("Wireless communicator initialized.");
         }
+
+        public static void Cleanup()
+        {
+            UDPNode.Close();
+            UDPNode.Dispose();
+        }
     }
 
     public class DataPacket

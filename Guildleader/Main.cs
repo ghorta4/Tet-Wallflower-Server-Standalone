@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using PMDMMO_Main;
 
 namespace Guildleader
 {
-    public static class StartupFunctions
+    public static class StartupAndEndFunctions
     {
         public static void InitializeAll()
         {
@@ -13,6 +14,11 @@ namespace Guildleader
 
         static void StartSubThreads()
         {
+        }
+
+        public static void CleanupAll()
+        {
+            WirelessCommunicator.Cleanup();
         }
     }
 
