@@ -6,9 +6,12 @@ namespace Guildleader
 {
     public static class StartupAndEndFunctions
     {
+        static WirelessCommunicator mainWifiComm;
+
         public static void InitializeAll(WirelessCommunicator wifiComm)
         {
-            wifiComm.Initialize(); 
+            wifiComm.Initialize();
+            mainWifiComm = wifiComm;
             StartSubThreads(wifiComm);
         }
 
@@ -17,9 +20,9 @@ namespace Guildleader
             wifiComm.StartListeningThread();
         }
 
-        public static void CleanupAll(WirelessCommunicator wifiComm)
+        public static void CleanupAll()
         {
-            wifiComm.Cleanup();
+            mainWifiComm.Cleanup();
         }
     }
 

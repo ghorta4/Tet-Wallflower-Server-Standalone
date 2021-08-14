@@ -24,4 +24,48 @@ namespace Guildleader
             return sb.ToString();
         }
     }
+
+    public static class ErrorHandler
+    {
+        static bool readingLog;
+        static Queue<Exception> errorLog = new Queue<Exception>();
+        static bool pendingErrors;
+
+        public static void AddErrorToLog(Exception e)
+        {
+            if (readingLog)
+            {
+                return;
+            }
+            errorLog.Enqueue(e);
+            if (!pendingErrors)
+            {
+                Console.WriteLine("Error log updated.");
+            }
+            pendingErrors = true;
+
+            while (errorLog.Count > 100)
+            {
+                errorLog.Dequeue();
+            }
+        }
+
+        public static void PrintErrorLog()
+        {
+            readingLog = true;
+            while(errorLog.Count > 0)
+            {
+                Exception e = errorLog.Dequeue();
+                Console.WriteLine(e);
+            }
+            ClearErrorLog();
+            readingLog = false;
+        }
+
+        public static void ClearErrorLog()
+        {
+            errorLog.Clear();
+            pendingErrors = false;
+        }
+    }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Linq;
@@ -11,14 +10,21 @@ namespace Guildleader
 {
     public abstract class WirelessCommunicator
     {
-        public List<Exception> errorLog = new List<Exception>();
 
-        public static bool abortWirelessCommunications;
-        public static bool WirelessThreadActive { get { return !abortWirelessCommunications; } }
+        public largeObjectByteHandler lobh = new largeObjectByteHandler();
+
+        public bool abortWirelessCommunications;
+        public bool WirelessThreadActive { get { return !abortWirelessCommunications; } }
 
         public UdpClient UDPNode;
 
         public Queue<DataPacket> packets = new Queue<DataPacket> { };
+
+        public enum packetType
+        {
+            invalid,
+            testCall,
+        }
 
         public const int defaultPort = 44500;
 
@@ -77,7 +83,7 @@ namespace Guildleader
                     }
                     catch (Exception e)
                     {
-                        errorLog.Add(e);
+                        ErrorHandler.AddErrorToLog(e);
                     }
 
                     continue;
@@ -86,15 +92,16 @@ namespace Guildleader
                 try
                 {
                     byte[] buffer = UDPNode.EndReceive(listen, ref endpoint);
-                    packets.Enqueue(new DataPacket(endpoint.Address, endpoint.Port, buffer));
-                    Console.WriteLine("Packet get!");
+                    RecievePacket(endpoint.Address, endpoint.Port, buffer);
                 }
                 catch (Exception e)
                 {
-                    errorLog.Add(e);
+                    ErrorHandler.AddErrorToLog(e);
                 }
             }
         }
+
+        public abstract void RecievePacket(IPAddress address, int port, byte[] data);
 
         public void Cleanup()
         {
@@ -102,29 +109,72 @@ namespace Guildleader
             UDPNode.Close();
             UDPNode.Dispose();
         }
+
+        public byte[] GenerateProperDataPacket(byte[] information, packetType dataType, Dictionary<packetType, int> lastSentMessageIDRecords)
+        {
+            if (!lastSentMessageIDRecords.ContainsKey(dataType))
+            {
+                lastSentMessageIDRecords.Add(dataType, int.MinValue);
+            }
+            List<byte> holster = new List<byte>();
+            holster.Add((byte)dataType);
+            holster.AddRange(Convert.ToByte(lastSentMessageIDRecords[dataType]));
+            holster.AddRange(information);
+            lastSentMessageIDRecords[dataType]++;
+
+            return holster.ToArray();
+        }
+        public void SendPacketToGivenEndpoint(IPEndPoint target, byte[] packet)
+        {
+            try
+            {
+                UDPNode.Send(packet, packet.Length, target);
+            }
+            catch (Exception e)
+            {
+                ErrorHandler.AddErrorToLog(e);
+            }
+        }
     }
 
     public class DataPacket
     {
-        public enum packetType
-        {
-            invalid,
-            testCall,
-        }
-
         public IPAddress address;
         public int port;
 
-        public packetType stowedPacketType;
+        public WirelessCommunicator.packetType stowedPacketType;
 
         public byte[] contents;
 
-        public DataPacket(IPAddress addressGiven, int portGiven, byte[] packetBytes)
+        public static DataPacket GetDataPacket(IPAddress addressGiven, int portGiven, byte[] packetBytes, Dictionary<WirelessCommunicator.packetType, int> packetDictionary)
         {
-            address = addressGiven;
-            port = portGiven;
-            stowedPacketType = (packetType)contents[0];
-            contents = packetBytes.Skip(sizeof(byte)).ToArray();
+            const int packetHeaderSize = sizeof(byte) + sizeof(int);
+            if (packetBytes.Length < packetHeaderSize)
+            {
+                return null;
+            }
+            DataPacket dp = new DataPacket();
+            dp.address = addressGiven;
+            dp.port = portGiven;
+            dp.stowedPacketType = (WirelessCommunicator.packetType)packetBytes[0];
+            int packetNumber = Convert.ToInt(packetBytes, 1);
+
+            if (!Enum.IsDefined(typeof(WirelessCommunicator.packetType), dp.stowedPacketType))
+            {
+                return null;
+            }
+            if (!packetDictionary.ContainsKey(dp.stowedPacketType))
+            {
+                packetDictionary.Add(dp.stowedPacketType, packetNumber - 1);
+            }
+            if (packetDictionary[dp.stowedPacketType] >= packetNumber)
+            {
+                return null;
+            }
+            packetDictionary[dp.stowedPacketType] = packetNumber;
+
+            dp.contents = packetBytes.Skip(packetHeaderSize).ToArray();
+            return dp;
         }
     }
 
