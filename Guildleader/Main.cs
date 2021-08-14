@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using PMDMMO_Main;
+
 
 namespace Guildleader
 {
@@ -24,9 +24,11 @@ namespace Guildleader
 
     public static class MainFunctions
     {
+        public static bool endProgramRequested;
+
         public static void Update()
         {
-            Application.EndProgram();
+            endProgramRequested = true;
         }
     }
 }

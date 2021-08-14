@@ -20,6 +20,10 @@ namespace PMDMMO_Main
             while (!requestApplicationClosed)
             {
                 MainFunctions.Update();
+                if (MainFunctions.endProgramRequested)
+                {
+                    requestApplicationClosed = true;
+                }
             }
             StartupAndEndFunctions.CleanupAll();
             Console.WriteLine("Server ended. Press any key to continue.");
