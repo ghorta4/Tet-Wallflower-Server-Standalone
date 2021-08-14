@@ -6,4 +6,10 @@
     <RootNamespace>PMDMMO_Main</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="Guildleader">
+      <HintPath>..\Guildleader\bin\Debug\netstandard2.0\Guildleader.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
