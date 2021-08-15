@@ -21,21 +21,16 @@ namespace Guildleader
 
         public Dictionary<int, Dictionary<int, Dictionary<int, chunk>>> allChunks = new Dictionary<int, Dictionary<int, Dictionary<int, chunk>>> { };
         public static int worldMinx = -100, worldMaxx = 100, worldMiny = -100, worldMaxy = 100, worldMinz = -50, worldMaxz = 50;
-        const int worldStartSizeX = 5, worldStartSizeY = 5, worldStartSizeZ = 5;
+        const int worldStartSizeX = 5, worldStartSizeY = 5, worldStartSizeZ = 0;
 
         public const float worldTileSize = 0.1f;
-
-        const string gameInstanceStoragePath = "gameData";
-        const string tileInfoStorage = "chunks";
-
-        static string chunkInfoPath;
 
         public bool worldLoaded;
         public float[] threadCoordinator;
         public string[] threadStates;
         Thread[] worldGenerationThreads;
         public int postUpdatesComplete;
-        public void initializeAllChunks()
+        public virtual void initializeAllChunks()
         {
             for (int i = -worldStartSizeX - 1; i <= worldStartSizeX + 1; i++)
             {
@@ -97,7 +92,7 @@ namespace Guildleader
                         threadStates[threadID] = $"On {i}, {j}, {k}";
                         Int3 pos = new Int3(i, j, k);
                         allChunks[i][j][k] = new chunk(pos);
-                        allChunks[i][j][k].initializeNormally();
+                        allChunks[i][j][k].initializeNormally(0);
                         threadCoordinator[threadID] = (((i - xPosStart) * yDistance * zDistance) + (j + worldStartSizeY) * zDistance + k) / (xDistance * yDistance * zDistance);
                     }
                 }
@@ -118,20 +113,20 @@ namespace Guildleader
                 }
             }
         }
-
+    
         public chunk getChunkData(int xPos, int yPos, int zPos)
         {
             initializeChunkInfoPath();
             string fileName = getNameBasedOnPosition(xPos, yPos, zPos);
-            string chunkPath = chunkInfoPath + "/" + fileName;
+            string chunkPath = FileAccess.ChunkStorageName + fileName;
             chunk chu = null;
-            if (!File.Exists(chunkPath))
+            if (!FileAccess.FileExists(chunkPath))
             {
-                chu = chunk.spawnNewChunk(xPos, yPos, zPos);
+                chu = chunk.spawnNewChunk(xPos, yPos, zPos, 0);
             }
             else
             {
-                byte[] chunkData = File.ReadAllBytes(chunkPath);
+                byte[] chunkData = FileAccess.LoadFile(chunkPath);
                 chu = chunk.getChunkFromBytes(chunkData, new Int3(xPos, yPos, zPos));
             }
             if (!allChunks.ContainsKey(xPos))
@@ -161,8 +156,7 @@ namespace Guildleader
         {
             initializeChunkInfoPath();
             string fileName = getNameBasedOnPosition(xPos, yPos, zPos);
-            string chunkPath = chunkInfoPath + "/" + fileName;
-            File.WriteAllBytes(chunkPath, chu.convertChunkToBytes());
+            FileAccess.WriteBytesInsideCurrentDefaultDirectoryInSubfolder(chu.convertChunkToBytes(), fileName, FileAccess.ChunkStorageName);
         }
         public void unloadDistantChunkData(Int3 chunkPos, int cutoffRange)
         {
@@ -251,19 +245,7 @@ namespace Guildleader
         public static string appPath;
         void initializeChunkInfoPath()
         {
-            if (chunkInfoPath == null)
-            {
-                chunkInfoPath = appPath + "/" + gameInstanceStoragePath;
-                if (!Directory.Exists(chunkInfoPath))
-                {
-                    Directory.CreateDirectory(chunkInfoPath);
-                }
-                chunkInfoPath += "/" + tileInfoStorage;
-                if (!Directory.Exists(chunkInfoPath))
-                {
-                    Directory.CreateDirectory(chunkInfoPath);
-                }
-            }
+            FileAccess.PokeDirectoryIntoCurrentDefaultDirectory(FileAccess.ChunkStorageName);
         }
 
         public SingleWorldTile getTileAtLocation(Int3 pos)
@@ -407,12 +389,12 @@ namespace Guildleader
         {
             chunkPos = position;
         }
-        public static chunk spawnNewChunk(int x, int y, int z)
+        public static chunk spawnNewChunk(int x, int y, int z, int gereationType)
         {
             chunk temp = new chunk(new Int3(x, y, z));
-            if (x < WorldDataStorageModuleGeneric.worldMaxx && x > WorldDataStorageModuleGeneric.worldMinx && y > WorldDataStorageModuleGeneric.worldMiny && y < WorldDataStorageModuleGeneric.worldMaxy)
+            if (z == 0 && x < WorldDataStorageModuleGeneric.worldMaxx && x > WorldDataStorageModuleGeneric.worldMinx && y > WorldDataStorageModuleGeneric.worldMiny && y < WorldDataStorageModuleGeneric.worldMaxy)
             {
-                temp.initializeNormally();
+                temp.initializeNormally(0);
             }
             else
             {
@@ -456,7 +438,7 @@ namespace Guildleader
                 }
             }
         }
-        public void initializeNormally()
+        public void initializeNormally(int generationType)
         {
             for (int i = 0; i < tiles.GetLength(0); i++)
             {
@@ -465,7 +447,18 @@ namespace Guildleader
                     for (int k = 0; k < tiles.GetLength(2); k++)
                     {
                         Int3 tilePos = new Int3(chunkPos.x * defaultx + i, chunkPos.y * defaulty + j, k);
-                        tiles[i, j, k] = new SingleWorldTile(0, tilePos);
+                        short desiredID = 0;
+                        switch (k)
+                        {
+                            case 0:
+                                desiredID = 1;
+                                break;
+                            case 1:
+                            case 2:
+                                desiredID = 0;
+                                break;
+                        }
+                        tiles[i, j, k] = new SingleWorldTile(desiredID, tilePos);
 
                         SingleWorldTile swt = tiles[i, j, k];
                         TileProperties tp = TileLibrary.tileLib[swt.tileID];
@@ -476,64 +469,6 @@ namespace Guildleader
 
         public void neighborRequiringUpdate()
         {
-            for (int i = 0; i < tiles.GetLength(0); i++)
-            {
-                for (int j = 0; j < tiles.GetLength(1); j++)
-                {
-                    Int3 tilePos = new Int3(chunkPos.x * defaultx + i, chunkPos.y * defaulty + j, chunkPos.z * defaultz);
-                    for (int k = 0; k < tiles.GetLength(2); k++)
-                    {
-                        tilePos.z = chunkPos.z * defaultz + k;
-                        SingleWorldTile self = tiles[i, j, k];
-                        const int searchWidth = 1;
-                        const int searchHeight = 3;
-                        int random = RNG.positionBasedQuickInt(i, j, k, WorldManager.currentWorld.seed);
-                        SingleWorldTile[,,] neighbors = new SingleWorldTile[2 * searchWidth + 1, 2 * searchWidth + 1, 2 * searchHeight + 1];
-                        neighbors[searchWidth, searchWidth, searchHeight] = self;
-                        int xSearch = (random & 0b00000001) == 0 ? 1 : -1;
-                        int ySearch = (random & 0b00000010) == 0 ? 1 : -1;
-                        //first, fall if this is a dirt block and there is a nearby spot that is low and empty
-                        if (self.tileID == 1)
-                        {
-                            bool breakout = false;
-                            for (int si = -xSearch; si != xSearch; si += xSearch)
-                            {
-                                for (int sj = -ySearch; sj != ySearch; sj += ySearch)
-                                {
-                                    for (int sk = -1; sk >= -2; sk--)
-                                    {
-                                        SingleWorldTile target = getTileFromNeighborArray(neighbors, tilePos + new Int3(si, sj, sk), si + searchWidth, sj + searchWidth, sk + searchHeight);
-                                        if (target.tileID == 0)
-                                        {
-                                            swapTiles(self, target);
-                                            breakout = true;
-                                            break;
-                                        }
-                                    }
-                                    if (breakout)
-                                    {
-                                        break;
-                                    }
-                                }
-                                if (breakout)
-                                {
-                                    break;
-                                }
-                            }
-                            if (breakout)
-                            {
-                                break;
-                            }
-                        }
-
-                        //spawn grass 
-                        if (self.tileID == 1 && getTileFromNeighborArray(neighbors, tilePos + new Int3(0, 0, 1), searchWidth, searchWidth, searchHeight + 1).tileID == 0)
-                        {
-                            tiles[i, j, k] = new SingleWorldTile(4, tilePos);
-                        }
-                    }
-                }
-            }
             hasCompletedPostProcessingThatRequiresNeighbors = true;
         }
 

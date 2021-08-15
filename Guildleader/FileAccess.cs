@@ -13,6 +13,8 @@ namespace Guildleader
         public static string AssetsFileLocation { get { return string.Concat(SaveLocation, "Assets/"); } } //for server to store downloadable assets
         static string BackupFileLocation { get { return string.Concat(SaveLocation, "Backups/"); } }
 
+        public const string ChunkStorageName = "chunks/";
+
         static string CurrentDefaultDirectory;
 
         public static void Initialize()
@@ -22,11 +24,18 @@ namespace Guildleader
             PokeDirectiory(AssetsFileLocation);
             PokeDirectiory(BackupFileLocation);
         }
-        static void PokeDirectiory(string location)
+        public static void PokeDirectiory(string location)
         {
             if (!Directory.Exists(location))
             {
                 Directory.CreateDirectory(location);
+            }
+        }
+        public static void PokeDirectoryIntoCurrentDefaultDirectory(string sublocation)
+        {
+            if (!Directory.Exists(CurrentDefaultDirectory + sublocation))
+            {
+                Directory.CreateDirectory(CurrentDefaultDirectory + sublocation);
             }
         }
 
@@ -36,7 +45,16 @@ namespace Guildleader
             CurrentDefaultDirectory = location;
         }
 
+        public static bool FileExists(string pathUnderDefaultDirectory)
+        {
+            return File.Exists(CurrentDefaultDirectory + pathUnderDefaultDirectory);
+        }
+
         public static byte[] LoadFile(string fileName)
+        {
+            return LoadFileInSubdirectory(fileName, "");
+        }
+        public static byte[] LoadFileInSubdirectory(string fileName, string subdirectory)
         {
             if (CurrentDefaultDirectory == null)
             {
@@ -48,8 +66,8 @@ namespace Guildleader
                 ErrorHandler.AddErrorToLog(new Exception("Warning: Target directory does not exist. Directory: " + CurrentDefaultDirectory));
                 return null;
             }
-            string targetPath = CurrentDefaultDirectory + fileName;
-            string backupPath = BackupFileLocation + fileName;
+            string targetPath = CurrentDefaultDirectory + subdirectory + fileName;
+            string backupPath = BackupFileLocation + subdirectory + fileName;
             if (File.Exists(targetPath))
             {
                 return File.ReadAllBytes(targetPath);
@@ -88,6 +106,11 @@ namespace Guildleader
                 holster.Add(new FileInfo(s));
             }
             return holster.ToArray();
+        }
+
+        public static void WriteBytesInsideCurrentDefaultDirectoryInSubfolder(byte[] data, string filename, string subfolder)
+        {
+            File.WriteAllBytes(CurrentDefaultDirectory + subfolder + filename, data);
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Guildleader
     public class SingleWorldTile
     {
         public short tileID; //0 is empty
-        public short tileHealth = 10;//for liquids, this means its entity number (that represents its contents)
+        public short tileHealth = 10;//for certain blocks, points to an entitydata
         public short variant;
 
         public SingleWorldTile(short id, Int3 pos)
