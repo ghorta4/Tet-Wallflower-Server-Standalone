@@ -10,8 +10,10 @@ namespace Guildleader
 
         public static void InitializeAll(WirelessCommunicator wifiComm)
         {
+            FileAccess.Initialize();
             wifiComm.Initialize();
             mainWifiComm = wifiComm;
+            FileAccess.Initialize();
             StartSubThreads(wifiComm);
         }
 

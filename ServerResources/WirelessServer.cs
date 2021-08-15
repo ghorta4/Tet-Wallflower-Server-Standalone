@@ -8,7 +8,7 @@ namespace ServerResources
 {
     public class WirelessServer : WirelessCommunicator
     {
-        List<ClientInfo> clients;
+        List<ClientInfo> clients = new List<ClientInfo>();
 
         public override void Initialize()
         {
@@ -27,7 +27,15 @@ namespace ServerResources
 
         public override void RecievePacket(IPAddress address, int port, byte[] data)
         {
-            ClientInfo target = clients.Find(x => x.address == address && x.port == port);
+            ClientInfo target = null;
+            foreach (ClientInfo ci in clients)
+            {
+                if (ci.address.ToString() == address.ToString() && ci.port == port)
+                {
+                    target = ci;
+                    break;
+                }
+            }
             if (target == null)
             {
                 target = new ClientInfo(address, port);
@@ -53,6 +61,19 @@ namespace ServerResources
                     break;
             }
         }
+
+        public void sendDataToOneClient(ClientInfo client, PacketType type, byte[] message)
+        {
+            byte[] assembledPacket = GenerateProperDataPacket(message, type, client.sentDataRecords);
+            SendPacketToGivenEndpoint(client.GetIPEndpoint, assembledPacket);
+        }
+        public void sendDataToAllClients(PacketType type, byte[] contents)
+        {
+            for (int i = 0; i < clients.Count; i++) //handled this way in case clients are removed mid-process
+            {
+                sendDataToOneClient(clients[i], type, contents);
+            }
+        }
     }
 
     public class ClientInfo
@@ -66,9 +87,9 @@ namespace ServerResources
         }
 
         //keep track of what kind of data type is read/the associated ID and don't use out of order packets
-        public Dictionary<WirelessCommunicator.packetType, int> sentDataRecords = new Dictionary<WirelessCommunicator.packetType, int> { };
+        public Dictionary<WirelessCommunicator.PacketType, int> sentDataRecords = new Dictionary<WirelessCommunicator.PacketType, int> { };
 
         //this value stores what the latest processed request ID was
-        public Dictionary<WirelessCommunicator.packetType, int> dataSequencingDictionary = new Dictionary<WirelessCommunicator.packetType, int> { };
+        public Dictionary<WirelessCommunicator.PacketType, int> dataSequencingDictionary = new Dictionary<WirelessCommunicator.PacketType, int> { };
     }
 }

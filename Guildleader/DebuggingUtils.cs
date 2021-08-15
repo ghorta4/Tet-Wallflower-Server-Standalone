@@ -31,6 +31,10 @@ namespace Guildleader
         static Queue<Exception> errorLog = new Queue<Exception>();
         static bool pendingErrors;
 
+        public static void AddErrorToLog(string s)
+        {
+            AddErrorToLog(new Exception(s));
+        }
         public static void AddErrorToLog(Exception e)
         {
             if (readingLog)

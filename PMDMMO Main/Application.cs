@@ -22,6 +22,10 @@ namespace PMDMMO_Main
             Console.WriteLine("Server started.");
             StartupAndEndFunctions.InitializeAll(Server);
 
+            FileAccess.SetDefaultDirectory(FileAccess.AssetsFileLocation);
+
+            TileLibrary.LoadTileLibrary();
+
             InputHandler.inputThread = new Thread(InputHandler.HandleUserInput);
             InputHandler.inputThread.Start();
 

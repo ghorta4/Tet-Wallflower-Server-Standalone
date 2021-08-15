@@ -20,10 +20,10 @@ namespace Guildleader
 
         public Queue<DataPacket> packets = new Queue<DataPacket> { };
 
-        public enum packetType
+        public enum PacketType
         {
             invalid,
-            testCall,
+            heartbeatPing
         }
 
         public const int defaultPort = 44500;
@@ -40,11 +40,11 @@ namespace Guildleader
         public void FindVariablePort()
         {
             List<IPEndPoint> allUsedListeners = new List<IPEndPoint>(IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners());
-            int targetPort = defaultPort;
+            int targetPort = 0;
             for (int i = 0; i < 100; i++)
             {
                 bool skipPort = false;
-                targetPort = defaultPort + i;
+                targetPort = defaultPort + i + 100;
                 foreach (IPEndPoint ipe in allUsedListeners)
                 {
                     if (ipe.Port == targetPort)
@@ -110,7 +110,7 @@ namespace Guildleader
             UDPNode.Dispose();
         }
 
-        public byte[] GenerateProperDataPacket(byte[] information, packetType dataType, Dictionary<packetType, int> lastSentMessageIDRecords)
+        public byte[] GenerateProperDataPacket(byte[] information, PacketType dataType, Dictionary<PacketType, int> lastSentMessageIDRecords)
         {
             if (!lastSentMessageIDRecords.ContainsKey(dataType))
             {
@@ -142,11 +142,11 @@ namespace Guildleader
         public IPAddress address;
         public int port;
 
-        public WirelessCommunicator.packetType stowedPacketType;
+        public WirelessCommunicator.PacketType stowedPacketType;
 
         public byte[] contents;
 
-        public static DataPacket GetDataPacket(IPAddress addressGiven, int portGiven, byte[] packetBytes, Dictionary<WirelessCommunicator.packetType, int> packetDictionary)
+        public static DataPacket GetDataPacket(IPAddress addressGiven, int portGiven, byte[] packetBytes, Dictionary<WirelessCommunicator.PacketType, int> packetDictionary)
         {
             const int packetHeaderSize = sizeof(byte) + sizeof(int);
             if (packetBytes.Length < packetHeaderSize)
@@ -156,10 +156,9 @@ namespace Guildleader
             DataPacket dp = new DataPacket();
             dp.address = addressGiven;
             dp.port = portGiven;
-            dp.stowedPacketType = (WirelessCommunicator.packetType)packetBytes[0];
             int packetNumber = Convert.ToInt(packetBytes, 1);
-
-            if (!Enum.IsDefined(typeof(WirelessCommunicator.packetType), dp.stowedPacketType))
+            dp.stowedPacketType = (WirelessCommunicator.PacketType)packetBytes[0];
+            if (!Enum.IsDefined(typeof(WirelessCommunicator.PacketType), dp.stowedPacketType))
             {
                 return null;
             }
