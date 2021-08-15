@@ -12,6 +12,7 @@ namespace Guildleader
         public static string DownloadedFileLocation { get { return string.Concat(SaveLocation, "Downloads/"); } } //for client to download assets from server
         public static string AssetsFileLocation { get { return string.Concat(SaveLocation, "Assets/"); } } //for server to store downloadable assets
         static string BackupFileLocation { get { return string.Concat(SaveLocation, "Backups/"); } }
+        public static string LocalFilesLocation { get { return string.Concat(SaveLocation, "LocalFiles/"); } }
 
         public const string ChunkStorageName = "chunks/";
 
@@ -50,6 +51,18 @@ namespace Guildleader
             return File.Exists(CurrentDefaultDirectory + pathUnderDefaultDirectory);
         }
 
+        public static byte[] LoadFileIgnoringDefaultDirectory(string fullPathName)
+        {
+            if (File.Exists(fullPathName))
+            {
+                return File.ReadAllBytes(fullPathName);
+            }
+            else
+            {
+                ErrorHandler.AddErrorToLog("Warning: Cannot find file at path " + fullPathName + ".");
+                return null;
+            }
+        }
         public static byte[] LoadFile(string fileName)
         {
             return LoadFileInSubdirectory(fileName, "");
@@ -111,6 +124,10 @@ namespace Guildleader
         public static void WriteBytesInsideCurrentDefaultDirectoryInSubfolder(byte[] data, string filename, string subfolder)
         {
             File.WriteAllBytes(CurrentDefaultDirectory + subfolder + filename, data);
+        }
+        public static void WriteBytesAtLocation(byte[] data, string location)
+        {
+            File.WriteAllBytes(SaveLocation + location, data);
         }
     }
 }
