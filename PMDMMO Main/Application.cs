@@ -25,9 +25,12 @@ namespace PMDMMO_Main
             FileAccess.SetDefaultDirectory(FileAccess.AssetsFileLocation);
 
             TileLibrary.LoadTileLibrary();
-
             InputHandler.inputThread = new Thread(InputHandler.HandleUserInput);
             InputHandler.inputThread.Start();
+            Console.WriteLine("World generating...");
+            WorldManager.currentWorld = new WorldDataStorageModuleGeneric();
+            WorldManager.currentWorld.InitializeAllChunks();
+            Console.WriteLine("World generated.");
 
             while (!requestApplicationClosed)
             {

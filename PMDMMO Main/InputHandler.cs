@@ -47,6 +47,16 @@ namespace PMDMMO_Main
                     case "clean":
                         Console.Clear();
                         break;
+                    case "gen progress":
+                    case "build progress":
+                    case "progress":
+                        WriteWorldGenerationStatus();
+                        break;
+                    case "save world":
+                        Write("Saving...");
+                        WorldManager.currentWorld.SaveAllChunks();
+                        Write("World data saved.");
+                        break;
                 }
             }
             Console.WriteLine("User input thread closed.");
@@ -55,6 +65,29 @@ namespace PMDMMO_Main
         static void CloseApp()
         {
             Application.requestApplicationClosed = true;
+        }
+
+        static void WriteWorldGenerationStatus()
+        {
+            if (WorldManager.currentWorld == null)
+            {
+                Write("World object not set.");
+                return;
+            }
+
+            WorldDataStorageModuleGeneric world = WorldManager.currentWorld;
+
+            Write("Finished: " + world.worldLoaded);
+            Write("Thread states:");
+            foreach (string s in world.threadStates)
+            {
+                Write(s);
+            }
+        }
+
+        static void Write(string message)
+        {
+            Console.WriteLine(message);
         }
     }
 }

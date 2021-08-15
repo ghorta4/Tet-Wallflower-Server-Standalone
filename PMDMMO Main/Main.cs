@@ -13,7 +13,6 @@ namespace Guildleader
             FileAccess.Initialize();
             wifiComm.Initialize();
             mainWifiComm = wifiComm;
-            FileAccess.Initialize();
             StartSubThreads(wifiComm);
         }
 
