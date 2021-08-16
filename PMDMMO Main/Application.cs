@@ -13,13 +13,17 @@ namespace PMDMMO_Main
     public static class Application
     {
         public static bool requestApplicationClosed;
+        public static bool endHUD;
 
         static WirelessServer Server;
 
         static void Main(string[] args)
         {
+            ConsoleBasedHUD.consoleThread = new Thread(ConsoleBasedHUD.UpdateHUD);
+            ConsoleBasedHUD.consoleThread.Start();
+
             Server = new WirelessServer();
-            Console.WriteLine("Server started.");
+            ErrorHandler.AddMessageToLog("Server started.");
             StartupAndEndFunctions.InitializeAll(Server);
 
             FileAccess.SetDefaultDirectory(FileAccess.AssetsFileLocation);
@@ -27,10 +31,10 @@ namespace PMDMMO_Main
             TileLibrary.LoadTileLibrary();
             InputHandler.inputThread = new Thread(InputHandler.HandleUserInput);
             InputHandler.inputThread.Start();
-            Console.WriteLine("World generating...");
-            WorldManager.currentWorld = new WorldDataStorageModuleGeneric();
-            WorldManager.currentWorld.InitializeAllChunks();
-            Console.WriteLine("World generated.");
+            ErrorHandler.AddMessageToLog("World generating...");
+            WorldManager.currentWorld = new ServerWorldHandler();
+            (WorldManager.currentWorld as ServerWorldHandler).InitializeAllChunks();
+            ErrorHandler.AddMessageToLog("World generated.");
 
             while (!requestApplicationClosed)
             {
@@ -42,8 +46,9 @@ namespace PMDMMO_Main
                 }
             }
             StartupAndEndFunctions.CleanupAll();
-            Console.WriteLine("Server ended. Press any key to continue.");
+            ErrorHandler.AddMessageToLog("Server ended. Press any key to continue.");
             Console.ReadKey();
+            endHUD = true;
         }
 
         public static void EndProgram()

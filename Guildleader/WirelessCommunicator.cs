@@ -11,8 +11,6 @@ namespace Guildleader
     public abstract class WirelessCommunicator
     {
 
-        public largeObjectByteHandler lobh = new largeObjectByteHandler();
-
         public bool abortWirelessCommunications;
         public bool WirelessThreadActive { get { return !abortWirelessCommunications; } }
 
@@ -23,7 +21,8 @@ namespace Guildleader
         public enum PacketType
         {
             invalid,
-            heartbeatPing
+            heartbeatPing,
+            largeObjectPacket,
         }
 
         public const int defaultPort = 44500;
@@ -194,8 +193,8 @@ public class largeObjectByteHandler
                 List<byte> subSegment = new List<byte>();
                 subSegment.AddRange(longValue.Skip(counter * breakSize).Take(distanceToGrab));
 
-                subSegment.InsertRange(0, BitConverter.GetBytes(counter));
-                subSegment.InsertRange(0, BitConverter.GetBytes(lastSentPacket));
+                subSegment.InsertRange(0, Convert.ToByte(counter));
+                subSegment.InsertRange(0, Convert.ToByte(lastSentPacket));
                 segments.Add(subSegment.ToArray());
 
                 counter++;
@@ -203,9 +202,9 @@ public class largeObjectByteHandler
             int length = segments.Count();
 
             List<byte> packetIdentifyingInformation = new List<byte>();
-            packetIdentifyingInformation.AddRange(BitConverter.GetBytes(lastSentPacket));
-            packetIdentifyingInformation.AddRange(BitConverter.GetBytes(short.MaxValue));
-            packetIdentifyingInformation.AddRange(BitConverter.GetBytes(length));
+            packetIdentifyingInformation.AddRange(Convert.ToByte(lastSentPacket));
+            packetIdentifyingInformation.AddRange(Convert.ToByte(short.MaxValue));
+            packetIdentifyingInformation.AddRange(Convert.ToByte(length));
 
             segments.Insert(0, packetIdentifyingInformation.ToArray());
 
@@ -222,8 +221,8 @@ public class largeObjectByteHandler
 
         public void recieveSegments(string identifier, byte[] segment)
         {
-            short packetID = BitConverter.ToInt16(segment, 0);
-            short positionInPacket = BitConverter.ToInt16(segment, sizeof(short));
+            short packetID = Convert.ToShort(segment, 0);
+            short positionInPacket = Convert.ToShort(segment, sizeof(short));
 
             string fullName = string.Concat(identifier, packetID);
             if (!recievedSegments.ContainsKey(fullName))
@@ -233,7 +232,7 @@ public class largeObjectByteHandler
             recievedSegments[fullName].packetID = packetID;
             if (positionInPacket == short.MaxValue)
             {
-                recievedSegments[fullName].maxSize = BitConverter.ToInt16(segment, sizeof(short) * 2);
+                recievedSegments[fullName].maxSize = Convert.ToShort(segment, sizeof(short) * 2);
                 return;
             }
 

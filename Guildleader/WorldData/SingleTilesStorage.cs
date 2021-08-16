@@ -30,7 +30,6 @@ namespace Guildleader
             List<byte> bytes = new List<byte> { };
             bytes.AddRange(Convert.ToByte(tileID));
             bytes.AddRange(Convert.ToByte(tileHealth));
-            //bytes.AddRange(BitConverter.GetBytes(variant));
             return bytes.ToArray();
         }
 

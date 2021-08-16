@@ -10,7 +10,7 @@ namespace Guildleader
         public static void PrintByteArray(byte[] list)
         {
             string s = ConvertBytesToReadableString(list);
-            Console.WriteLine(s);
+            ErrorHandler.AddMessageToLog(s);
         }
 
         public static string ConvertBytesToReadableString(byte[] list)
@@ -29,6 +29,7 @@ namespace Guildleader
     {
         static bool readingLog;
         static Queue<Exception> errorLog = new Queue<Exception>();
+        public static List<string> messageLog = new List<string>();
         static bool pendingErrors;
 
         public static void AddErrorToLog(string s)
@@ -44,7 +45,7 @@ namespace Guildleader
             errorLog.Enqueue(e);
             if (!pendingErrors)
             {
-                Console.WriteLine("Error log updated.");
+                ErrorHandler.AddMessageToLog("Error log updated.");
             }
             pendingErrors = true;
 
@@ -54,13 +55,22 @@ namespace Guildleader
             }
         }
 
+        public static void AddMessageToLog(string s)
+        {
+            messageLog.Add(s);
+            while (messageLog.Count > 100)
+            {
+                messageLog.RemoveAt(0);
+            }
+        }
+
         public static void PrintErrorLog()
         {
             readingLog = true;
             while(errorLog.Count > 0)
             {
                 Exception e = errorLog.Dequeue();
-                Console.WriteLine(e);
+                ErrorHandler.AddMessageToLog(e.ToString());
             }
             ClearErrorLog();
             readingLog = false;

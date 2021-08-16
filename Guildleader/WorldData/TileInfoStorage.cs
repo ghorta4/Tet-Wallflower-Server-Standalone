@@ -34,7 +34,7 @@ namespace Guildleader
             string line = "";
             while ((line = sr.ReadLine()) != null)
             {
-                tp.processTileFileLine(line);
+                tp.ProcessTileFileLine(line);
             }
             sr.Close();
 
@@ -57,7 +57,7 @@ namespace Guildleader
         public float totalVariantWeight;
         string lastProcessedHeader;
         public List<string> tags = new List<string>();
-        public void processTileFileLine(string line)
+        public void ProcessTileFileLine(string line)
         {
             string[] split = line.Split('/');
             string targetString = split[split.Length - 1];
@@ -76,10 +76,10 @@ namespace Guildleader
                     id = short.Parse(targetString);
                     break;
                 case "tile":
-                    processTileString(targetString);
+                    ProcessTileString(targetString);
                     break;
                 case "tags":
-                    processTagsString(targetString);
+                    ProcessTagsString(targetString);
                     break;
                 default:
                     ErrorHandler.AddErrorToLog("Warning: Unrecognized tile info header " + lastProcessedHeader);
@@ -87,7 +87,7 @@ namespace Guildleader
             }
         }
 
-        void processTileString(string text)
+        void ProcessTileString(string text)
         {
             string[] sortedByWeights = text.Split(';');
             for (int startPos = 0; startPos + 1 < sortedByWeights.Length; startPos += 2)
@@ -105,7 +105,7 @@ namespace Guildleader
                 }
             }
         }
-        void processTagsString(string text)
+        void ProcessTagsString(string text)
         {
             string[] tags = text.Split();
             foreach (string t in tags)

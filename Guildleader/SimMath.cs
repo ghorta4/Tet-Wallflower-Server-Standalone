@@ -14,11 +14,16 @@ namespace Guildleader
             x = xg; y = yg;
         }
 
-        public static Int2 zero{
+        public static Int2 Zero{
             get
             {
                 return new Int2();
             }
+        }
+
+        public static Int2 operator +(Int2 a, Int2 b)
+        {
+            return new Int2(a.x + b.x, a.y + b.y);
         }
     }
 
@@ -32,7 +37,7 @@ namespace Guildleader
             x = xg; y = yg; z = zg;
         }
 
-        public static Int3 zero
+        public static Int3 Zero
         {
             get
             {

@@ -3,63 +3,84 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using Guildleader;
+using ServerResources;
 
 namespace PMDMMO_Main
 {
     public static class InputHandler
     {
         public static Thread inputThread;
-
+        public static string currentEntry = "";
         public static void HandleUserInput()
         {
-            Console.WriteLine("User input thread started.");
+            ErrorHandler.AddMessageToLog("User input thread started.");
             while (!Application.requestApplicationClosed)
             {
-                string command = Console.ReadLine();
+                ConsoleKeyInfo cki = Console.ReadKey(true);
 
-                switch (command.ToLower())
+                switch (cki.Key)
                 {
-                    case "q":
-                    case "quit":
-                    case "exit":
-                    case "break":
-                        CloseApp();
+                    case ConsoleKey.Enter:
+                        ProcessCommand(currentEntry);
+                        currentEntry = "";
                         break;
-                    case "server":
-                    case "servers":
-                    case "list":
-                    case "connections":
-                    case "a":
-                    case "display servers":
-                    case "displayservers":
-                        ErrorHandler.AddErrorToLog(new Exception("Function not implemented."));
+                    case ConsoleKey.Backspace:
+                        if (currentEntry.Length > 0)
+                        {
+                            currentEntry = currentEntry.Substring(0, currentEntry.Length - 1);
+                        }
                         break;
-                    case "e":
-                    case "error":
-                    case "error log":
-                    case "log":
-                    case "elog":
-                    case "errorlog":
-                        ErrorHandler.PrintErrorLog();
-                        break;
-                    case "c":
-                    case "clear":
-                    case "clean":
-                        Console.Clear();
-                        break;
-                    case "gen progress":
-                    case "build progress":
-                    case "progress":
-                        WriteWorldGenerationStatus();
-                        break;
-                    case "save world":
-                        Write("Saving...");
-                        WorldManager.currentWorld.SaveAllChunks();
-                        Write("World data saved.");
+                    default:
+                        currentEntry += cki.KeyChar;
                         break;
                 }
             }
-            Console.WriteLine("User input thread closed.");
+            ErrorHandler.AddMessageToLog("User input thread closed.");
+        }
+
+        static void ProcessCommand(string s)
+        {
+            switch (s.ToLower())
+            {
+                case "q":
+                case "quit":
+                case "exit":
+                case "break":
+                    CloseApp();
+                    break;
+                case "server":
+                case "servers":
+                case "list":
+                case "connections":
+                case "a":
+                case "display servers":
+                case "displayservers":
+                    ErrorHandler.AddErrorToLog(new Exception("Function not implemented."));
+                    break;
+                case "e":
+                case "error":
+                case "error log":
+                case "log":
+                case "elog":
+                case "errorlog":
+                    ErrorHandler.PrintErrorLog();
+                    break;
+                case "c":
+                case "clear":
+                case "clean":
+                    Console.Clear();
+                    break;
+                case "gen progress":
+                case "build progress":
+                case "progress":
+                    WriteWorldGenerationStatus();
+                    break;
+                case "save world":
+                    Write("Saving...");
+                    WorldManager.currentWorld.SaveAllChunks();
+                    Write("World data saved.");
+                    break;
+            }
         }
 
         static void CloseApp()
@@ -75,7 +96,7 @@ namespace PMDMMO_Main
                 return;
             }
 
-            WorldDataStorageModuleGeneric world = WorldManager.currentWorld;
+            ServerWorldHandler world = WorldManager.currentWorld as ServerWorldHandler;
 
             Write("Finished: " + world.worldLoaded);
             Write("Thread states:");
@@ -87,7 +108,7 @@ namespace PMDMMO_Main
 
         static void Write(string message)
         {
-            Console.WriteLine(message);
+            ErrorHandler.AddMessageToLog(message);
         }
     }
 }

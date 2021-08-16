@@ -8,17 +8,21 @@ namespace ServerResources
 {
     public class WirelessServer : WirelessCommunicator
     {
+        const int maxPacketSize = 508;
         List<ClientInfo> clients = new List<ClientInfo>();
 
         public override void Initialize()
         {
             UDPNode = new UdpClient(defaultPort, AddressFamily.InterNetwork);
-            Console.WriteLine("Wireless server initialized.");
+            ErrorHandler.AddMessageToLog("Wireless server initialized.");
         }
 
         public void Update()
         {
-            lobh.runCleanup();
+            foreach (ClientInfo ci in clients)
+            {
+                ci.Update();
+            }
             while (packets.Count > 0)
             {
                 ProcessLatestPacket();
@@ -40,7 +44,7 @@ namespace ServerResources
             {
                 target = new ClientInfo(address, port);
                 clients.Add(target);
-                Console.WriteLine("New client connected.");
+                ErrorHandler.AddMessageToLog("New client connected.");
             }
             DataPacket dp = DataPacket.GetDataPacket(address, port, data, target.dataSequencingDictionary);
             if (dp == null)
@@ -65,7 +69,23 @@ namespace ServerResources
         public void sendDataToOneClient(ClientInfo client, PacketType type, byte[] message)
         {
             byte[] assembledPacket = GenerateProperDataPacket(message, type, client.sentDataRecords);
+
+            if (assembledPacket.Length > maxPacketSize)
+            {
+                byte[][] split = client.lobh.breakBytesIntoSendableSegments(assembledPacket, maxPacketSize - 12);
+                sendManyDatasToOneClient(client, PacketType.largeObjectPacket, client.sentDataRecords, split);
+                return;
+            }
+
             SendPacketToGivenEndpoint(client.GetIPEndpoint, assembledPacket);
+        }
+        public void sendManyDatasToOneClient(ClientInfo client, PacketType type, Dictionary<PacketType, int> records, byte[][] messages)
+        {
+            foreach (byte[] message in messages)
+            {
+                byte[] fullPack = GenerateProperDataPacket(message, type, records);
+                SendPacketToGivenEndpoint(client.GetIPEndpoint, fullPack);
+            }
         }
         public void sendDataToAllClients(PacketType type, byte[] contents)
         {
@@ -78,8 +98,19 @@ namespace ServerResources
 
     public class ClientInfo
     {
+        //Each client has its own largeObjectByteHandler. If the server only used 1 for all clients, a number of issues could arise.
+        //1. The LOBH can only handle short.max number of messages at a time. Exceeding this may be rare for only a couple of clients, but
+        //it could reasonably happen if a large library exists for the game AND many clients try to download it at once.
+        //2. There is a security risk- since a client can ask for pieces to be recovered based on the message ID, they could post
+        //an ID that another client asked for to get confidential information from them.
+        public largeObjectByteHandler lobh = new largeObjectByteHandler();
         public IPAddress address; public int port;
         public IPEndPoint GetIPEndpoint { get { return new IPEndPoint(address, port); } }
+
+        public void Update()
+        {
+            lobh.runCleanup();
+        }
 
         public ClientInfo(IPAddress addressGiven, int portGiven)
         {
