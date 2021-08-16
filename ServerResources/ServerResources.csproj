@@ -8,6 +8,9 @@
     <Reference Include="Guildleader">
       <HintPath>..\Guildleader\bin\Debug\netstandard2.0\Guildleader.dll</HintPath>
     </Reference>
+    <Reference Include="PMDMMO Main">
+      <HintPath>..\PMDMMO Main\bin\Debug\netcoreapp2.1\PMDMMO Main.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

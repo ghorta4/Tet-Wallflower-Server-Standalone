@@ -45,7 +45,7 @@ namespace Guildleader
             errorLog.Enqueue(e);
             if (!pendingErrors)
             {
-                ErrorHandler.AddMessageToLog("Error log updated.");
+                AddMessageToLog("++++Error log updated.++++");
             }
             pendingErrors = true;
 

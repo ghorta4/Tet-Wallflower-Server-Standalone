@@ -46,6 +46,15 @@ namespace Guildleader
             string fileName = GetNameBasedOnPosition(xPos, yPos, zPos);
             string chunkPath = FileAccess.ChunkStorageName + fileName;
             Chunk chu = null;
+
+            bool hasXpos = allChunks.ContainsKey(xPos);
+            bool hasYpos = hasXpos && allChunks[xPos].ContainsKey(yPos);
+
+            if (hasXpos && hasYpos && allChunks[xPos][yPos].ContainsKey(zPos))
+            {
+                return allChunks[xPos][yPos][zPos];
+            }
+
             if (!FileAccess.FileExists(chunkPath))
             {
                 chu = Chunk.SpawnNewChunk(xPos, yPos, zPos, 0);
@@ -55,11 +64,11 @@ namespace Guildleader
                 byte[] chunkData = FileAccess.LoadFile(chunkPath);
                 chu = Chunk.getChunkFromBytes(chunkData, new Int3(xPos, yPos, zPos));
             }
-            if (!allChunks.ContainsKey(xPos))
+            if (!hasXpos)
             {
                 allChunks[xPos] = new Dictionary<int, Dictionary<int, Chunk>>();
             }
-            if (!allChunks[xPos].ContainsKey(yPos))
+            if (!hasYpos)
             {
                 allChunks[xPos][yPos] = new Dictionary<int, Chunk>();
             }
@@ -73,6 +82,21 @@ namespace Guildleader
             }
 
             return chu;
+        }
+        public Chunk[] GetChunksInArea(int xPos, int yPos, int zPos, int xSearch, int ySearch, int zSearch)
+        {
+            List<Chunk> inArea = new List<Chunk>();
+            for (int x = xPos - xSearch; x <= xPos + xSearch; x++)
+            {
+                for (int y = yPos - ySearch; y <= yPos + ySearch; y++)
+                {
+                    for (int z = zPos - zSearch; z <= zPos + zSearch; z++)
+                    {
+                        inArea.Add(GetChunkData(x,y,z));
+                    }
+                }
+            }
+            return inArea.ToArray();
         }
         public void SaveChunkData(Int3 pos, Chunk chu)
         {

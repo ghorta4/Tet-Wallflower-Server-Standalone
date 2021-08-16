@@ -9,7 +9,7 @@ namespace ServerResources
     public class WirelessServer : WirelessCommunicator
     {
         const int maxPacketSize = 508;
-        List<ClientInfo> clients = new List<ClientInfo>();
+        public List<ClientInfo> clients = new List<ClientInfo>();
 
         public override void Initialize()
         {
@@ -19,9 +19,9 @@ namespace ServerResources
 
         public void Update()
         {
-            foreach (ClientInfo ci in clients)
+            for (int i = 0; i < clients.Count; i++)
             {
-                ci.Update();
+                clients[i]?.Update();
             }
             while (packets.Count > 0)
             {
@@ -44,7 +44,7 @@ namespace ServerResources
             {
                 target = new ClientInfo(address, port);
                 clients.Add(target);
-                ErrorHandler.AddMessageToLog("New client connected.");
+                ErrorHandler.AddMessageToLog("New client connected! :D");
             }
             DataPacket dp = DataPacket.GetDataPacket(address, port, data, target.dataSequencingDictionary);
             if (dp == null)
@@ -52,48 +52,66 @@ namespace ServerResources
                 ErrorHandler.AddErrorToLog(new Exception("Invalid packet recieved."));
                 return;
             }
-            packets.Enqueue(dp);
+            ClientDataPacket cdp = new ClientDataPacket(dp);
+            cdp.relevantClient = target;
+
+            packets.Enqueue(cdp);
         }
 
         public void ProcessLatestPacket()
         {
-            DataPacket dp = packets.Dequeue();
+            ClientDataPacket dp = packets.Dequeue() as ClientDataPacket;
+            dp.relevantClient.lastRecievedMessage = DateTime.Now;
             switch (dp.stowedPacketType)
             {
+                case PacketType.heartbeatPing:
+                    break;
+                case PacketType.requestPingback:
+                    sendDataToOneClient(dp.relevantClient, PacketType.heartbeatPing, new byte[0], 1);
+                    break;
                 default:
                     ErrorHandler.AddErrorToLog(new Exception("Unhandled packet type: " + dp.stowedPacketType));
                     break;
             }
         }
 
-        public void sendDataToOneClient(ClientInfo client, PacketType type, byte[] message)
+        public void sendDataToOneClient(ClientInfo client, PacketType type, byte[] message, int repeats)
         {
             byte[] assembledPacket = GenerateProperDataPacket(message, type, client.sentDataRecords);
 
             if (assembledPacket.Length > maxPacketSize)
             {
-                byte[][] split = client.lobh.breakBytesIntoSendableSegments(assembledPacket, maxPacketSize - 12);
-                sendManyDatasToOneClient(client, PacketType.largeObjectPacket, client.sentDataRecords, split);
+                byte[][] split = client.lobh.BreakBytesIntoSendableSegments(assembledPacket, maxPacketSize - 12);
+                sendManyDatasToOneClient(client, PacketType.largeObjectPacket, client.sentDataRecords, split, repeats);
                 return;
             }
 
             SendPacketToGivenEndpoint(client.GetIPEndpoint, assembledPacket);
         }
-        public void sendManyDatasToOneClient(ClientInfo client, PacketType type, Dictionary<PacketType, int> records, byte[][] messages)
+        public void sendManyDatasToOneClient(ClientInfo client, PacketType type, Dictionary<PacketType, int> records, byte[][] messages, int repeats)
         {
             foreach (byte[] message in messages)
             {
                 byte[] fullPack = GenerateProperDataPacket(message, type, records);
-                SendPacketToGivenEndpoint(client.GetIPEndpoint, fullPack);
+                for (int i = 0; i < repeats; i++)
+                {
+                    SendPacketToGivenEndpoint(client.GetIPEndpoint, fullPack);
+                }
             }
         }
-        public void sendDataToAllClients(PacketType type, byte[] contents)
+        public void sendDataToAllClients(PacketType type, byte[] contents, int repeats)
         {
             for (int i = 0; i < clients.Count; i++) //handled this way in case clients are removed mid-process
             {
-                sendDataToOneClient(clients[i], type, contents);
+                sendDataToOneClient(clients[i], type, contents, repeats);
             }
         }
+    }
+
+    public class ClientDataPacket : DataPacket
+    {
+        public ClientInfo relevantClient;
+        public ClientDataPacket(DataPacket toCopy) : base(toCopy) { }
     }
 
     public class ClientInfo
@@ -103,13 +121,15 @@ namespace ServerResources
         //it could reasonably happen if a large library exists for the game AND many clients try to download it at once.
         //2. There is a security risk- since a client can ask for pieces to be recovered based on the message ID, they could post
         //an ID that another client asked for to get confidential information from them.
-        public largeObjectByteHandler lobh = new largeObjectByteHandler();
+        public LargeObjectByteHandler lobh = new LargeObjectByteHandler();
         public IPAddress address; public int port;
         public IPEndPoint GetIPEndpoint { get { return new IPEndPoint(address, port); } }
 
+        public DateTime lastRecievedMessage;
+
         public void Update()
         {
-            lobh.runCleanup();
+            lobh.RunCleanup();
         }
 
         public ClientInfo(IPAddress addressGiven, int portGiven)

@@ -15,7 +15,7 @@ namespace PMDMMO_Main
         public static bool requestApplicationClosed;
         public static bool endHUD;
 
-        static WirelessServer Server;
+        public static WirelessServer Server;
 
         static void Main(string[] args)
         {
@@ -35,6 +35,8 @@ namespace PMDMMO_Main
             WorldManager.currentWorld = new ServerWorldHandler();
             (WorldManager.currentWorld as ServerWorldHandler).InitializeAllChunks();
             ErrorHandler.AddMessageToLog("World generated.");
+
+            WorldStateManager.Initialize();
 
             while (!requestApplicationClosed)
             {

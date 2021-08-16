@@ -22,7 +22,11 @@ namespace Guildleader
         {
             invalid,
             heartbeatPing,
+            requestPingback,
             largeObjectPacket,
+            largePacketRepairRequest,
+            credentials, //IE logging in information, when that becomes relevant
+            gameStateData, //IE entities, chunks, etc.
         }
 
         public const int defaultPort = 44500;
@@ -145,6 +149,14 @@ namespace Guildleader
 
         public byte[] contents;
 
+        public DataPacket() { }
+        public DataPacket(DataPacket toCopy) {
+            address = toCopy.address;
+            port = toCopy.port;
+            stowedPacketType = toCopy.stowedPacketType;
+            contents = toCopy.contents;
+        }
+
         public static DataPacket GetDataPacket(IPAddress addressGiven, int portGiven, byte[] packetBytes, Dictionary<WirelessCommunicator.PacketType, int> packetDictionary)
         {
             const int packetHeaderSize = sizeof(byte) + sizeof(int);
@@ -176,13 +188,13 @@ namespace Guildleader
         }
     }
 
-public class largeObjectByteHandler
+public class LargeObjectByteHandler
     {
-        public Dictionary<string, packetAssembler> recievedSegments = new Dictionary<string, packetAssembler> { };
+        public Dictionary<string, PacketAssembler> recievedSegments = new Dictionary<string, PacketAssembler> { };
 
-        public Dictionary<short, sentPacket> recentlySegmentedPacket = new Dictionary<short, sentPacket> { };
+        public Dictionary<short, SentPacket> recentlySegmentedPacket = new Dictionary<short, SentPacket> { };
         short lastSentPacket; //packet identifier
-        public byte[][] breakBytesIntoSendableSegments(byte[] longValue, short breakSize)
+        public byte[][] BreakBytesIntoSendableSegments(byte[] longValue, short breakSize)
         {
             List<byte[]> segments = new List<byte[]>();
 
@@ -209,7 +221,7 @@ public class largeObjectByteHandler
             segments.Insert(0, packetIdentifyingInformation.ToArray());
 
             byte[][] array = segments.ToArray();
-            recentlySegmentedPacket[lastSentPacket] = new sentPacket(array);
+            recentlySegmentedPacket[lastSentPacket] = new SentPacket(array);
 
             lastSentPacket++;
             if (lastSentPacket > short.MaxValue - 10)
@@ -219,7 +231,7 @@ public class largeObjectByteHandler
             return array;
         }
 
-        public void recieveSegments(string identifier, byte[] segment)
+        public void RecieveSegments(string identifier, byte[] segment)
         {
             short packetID = Convert.ToShort(segment, 0);
             short positionInPacket = Convert.ToShort(segment, sizeof(short));
@@ -227,7 +239,7 @@ public class largeObjectByteHandler
             string fullName = string.Concat(identifier, packetID);
             if (!recievedSegments.ContainsKey(fullName))
             {
-                recievedSegments.Add(fullName, new packetAssembler());
+                recievedSegments.Add(fullName, new PacketAssembler());
             }
             recievedSegments[fullName].packetID = packetID;
             if (positionInPacket == short.MaxValue)
@@ -237,15 +249,15 @@ public class largeObjectByteHandler
             }
 
             byte[] actualData = segment.Skip(sizeof(short) * 2).Take(segment.Length - sizeof(short) * 2).ToArray();
-            recievedSegments[fullName].addBytePacket(positionInPacket, actualData);
+            recievedSegments[fullName].AddBytePacket(positionInPacket, actualData);
         }
 
-        public void runCleanup()
+        public void RunCleanup()
         {
-            removeOldRecievedSegments(15);
-            removeOldSentPackets(30);
+            RemoveOldRecievedSegments(15);
+            RemoveOldSentPackets(30);
         }
-        public void removeOldRecievedSegments(int maxAgeOfPacketsInSeconds)
+        public void RemoveOldRecievedSegments(int maxAgeOfPacketsInSeconds)
         {
             DateTime now = DateTime.Now;
             List<string> toRemove = new List<string>();
@@ -262,25 +274,22 @@ public class largeObjectByteHandler
                 recievedSegments.Remove(s);
             }
         }
-        public void removeOldSentPackets(int maxAgeOfPacketsInSeconds)
+        public void RemoveOldSentPackets(int maxAgeOfPacketsInSeconds)
         {
             DateTime now = DateTime.Now;
             List<short> toRemove = new List<short>();
-            foreach (var kvp in recentlySegmentedPacket)
+            short[] toCheck = recentlySegmentedPacket.Keys.ToArray();
+            foreach (short s in toCheck)
             {
-                if ((now - kvp.Value.sent).TotalSeconds >= maxAgeOfPacketsInSeconds)
+                SentPacket sp = recentlySegmentedPacket[s];
+                if ((now - sp.sent).TotalSeconds >= maxAgeOfPacketsInSeconds)
                 {
-                    toRemove.Add(kvp.Key);
+                    recentlySegmentedPacket.Remove(s);
                 }
-            }
-
-            foreach (short s in toRemove)
-            {
-                recentlySegmentedPacket.Remove(s);
             }
         }
 
-        public byte[][] getPartsOfRecentlySentPacket(short segmentID, List<int> parts)
+        public byte[][] GetPartsOfRecentlySentPacket(short segmentID, List<int> parts)
         {
             byte[][] toResend = new byte[parts.Count][];
             if (!recentlySegmentedPacket.ContainsKey(segmentID))
@@ -298,16 +307,31 @@ public class largeObjectByteHandler
             }
             return toResend;
         }
+
+        public byte[][] GrabAllCompletedPackets()
+        {
+            string[] packsToCheck = recievedSegments.Keys.ToArray();
+            List<byte[]> completed = new List<byte[]>(); 
+            foreach (string s in packsToCheck)
+            {
+                byte[] pack = recievedSegments[s].GetAssembledPacket();
+                if (pack != null)
+                {
+                    completed.Add(pack);
+                }
+            }
+            return completed.ToArray();
+        }
     }
 
-    public class packetAssembler
+    public class PacketAssembler
     {
         public DateTime dateOfLastRecievedPart;
         byte[][] allSegments = new byte[32768][];
         public short maxSize = short.MaxValue;
         public short packetID = short.MaxValue;
 
-        public void addBytePacket(short segmentID, byte[] data)
+        public void AddBytePacket(short segmentID, byte[] data)
         {
             if (segmentID >= allSegments.Length || segmentID < 0)
             {
@@ -320,7 +344,7 @@ public class largeObjectByteHandler
             allSegments[segmentID] = data;
         }
 
-        public byte[] getAssembledPacket()
+        public byte[] GetAssembledPacket()
         {
             if (maxSize == short.MaxValue)
             {
@@ -338,7 +362,7 @@ public class largeObjectByteHandler
             return holster.ToArray();
         }
 
-        public List<int> getMissingParts()
+        public List<int> GetMissingParts()
         {
             List<int> holster = new List<int> { };
             if (maxSize == short.MaxValue)
@@ -358,12 +382,12 @@ public class largeObjectByteHandler
         }
     }
 
-    public class sentPacket
+    public class SentPacket
     {
         public DateTime sent;
         public byte[][] contents;
 
-        public sentPacket(byte[][] info)
+        public SentPacket(byte[][] info)
         {
             contents = info;
             sent = DateTime.Now;
