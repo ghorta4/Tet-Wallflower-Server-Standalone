@@ -45,6 +45,14 @@ namespace Guildleader
             }
         }
 
+        public static Int3 One
+        {
+            get
+            {
+                return new Int3(1,1,1);
+            }
+        }
+
         public static Int3 operator +(Int3 a, Int3 b)
         {
             return new Int3(a.x + b.x, a.y+b.y, a.z+b.z);

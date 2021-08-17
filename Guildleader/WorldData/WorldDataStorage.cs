@@ -287,16 +287,16 @@ namespace Guildleader
             Chunk temp = new Chunk(new Int3(x, y, z));
             if (z == 0 && x < WorldDataStorageModuleGeneric.worldMaxx && x > WorldDataStorageModuleGeneric.worldMinx && y > WorldDataStorageModuleGeneric.worldMiny && y < WorldDataStorageModuleGeneric.worldMaxy)
             {
-                temp.initializeNormally(0);
+                temp.InitializeNormally(0);
             }
             else
             {
-                temp.initializeBlank();
+                temp.InitializeBlank();
             }
             return temp;
         }
 
-        public void initializeBlank()
+        public void InitializeBlank()
         {
             for (int i = 0; i < tiles.GetLength(0); i++)
             {
@@ -309,7 +309,7 @@ namespace Guildleader
                 }
             }
         }
-        public void initializeNoise()
+        public void InitializeNoise()
         {
             for (int i = 0; i < tiles.GetLength(0); i++)
             {
@@ -331,7 +331,7 @@ namespace Guildleader
                 }
             }
         }
-        public void initializeNormally(int generationType)
+        public void InitializeNormally(int generationType)
         {
             for (int i = 0; i < tiles.GetLength(0); i++)
             {
@@ -405,7 +405,7 @@ namespace Guildleader
                 default:
                     ErrorHandler.AddErrorToLog("Unrecognized chunk version:" + version);
                     Chunk temp = new Chunk(new Int3(pos.x, pos.y, pos.z));
-                    temp.initializeBlank();
+                    temp.InitializeBlank();
                     return temp;
             }
 

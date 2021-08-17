@@ -73,7 +73,7 @@ namespace ServerResources
                         threadStates[threadID] = $"On {i}, {j}, {k}";
                         Int3 pos = new Int3(i, j, k);
                         allChunks[i][j][k] = new Chunk(pos);
-                        allChunks[i][j][k].initializeNormally(0);
+                        allChunks[i][j][k].InitializeNormally(0);
                         threadCoordinator[threadID] = (((i - xPosStart) * yDistance * zDistance) + (j + worldStartSizeY) * zDistance + k) / (xDistance * yDistance * zDistance);
                     }
                 }
