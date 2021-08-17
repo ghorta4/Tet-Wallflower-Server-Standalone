@@ -447,5 +447,13 @@ namespace Guildleader
             }
             return temp.ToArray();
         }
+        public byte[] convertChunkToBytesWithPositionInFront(Int3 pos)
+        {
+            List<byte> holster = new List<byte>(convertChunkToBytes());
+            holster.InsertRange(0, Convert.ToByte(pos.z));
+            holster.InsertRange(0, Convert.ToByte(pos.y));
+            holster.InsertRange(0, Convert.ToByte(pos.x));
+            return holster.ToArray();
+        }
     }
 }

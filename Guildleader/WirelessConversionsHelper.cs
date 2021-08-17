@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Guildleader
 {
-    public static class primitiveByteConverter
+    public static class PrimitiveByteConverter
     {
         public static byte[] ConvertDataToBytes(List<string> strings, List<float> floats, List<int> ints, List<byte> bytes)
         {
@@ -41,11 +41,11 @@ namespace Guildleader
             return holster.ToArray();
         }
 
-        public static primitiveDataPack ConvertBytesToPrimitiveDataPack(byte[] data)
+        public static PrimitiveDataPack ConvertBytesToPrimitiveDataPack(byte[] data)
         {
             List<byte> converted = new List<byte>();
             converted.AddRange(data);
-            primitiveDataPack pdp = new primitiveDataPack();
+            PrimitiveDataPack pdp = new PrimitiveDataPack();
 
             byte[] sizes = new byte[3];
 
@@ -86,7 +86,7 @@ namespace Guildleader
         }
     }
 
-    public class primitiveDataPack
+    public class PrimitiveDataPack
     {
         public List<string> strings = new List<string>();
         public List<float> floats = new List<float>();
