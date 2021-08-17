@@ -43,7 +43,7 @@ namespace PMDMMO_Main
                         break;
                     }
                     Stack<string> split = new Stack<string> { };
-                    string targetMessage = ErrorHandler.messageLog[ErrorHandler.messageLog.Count - 1 - currentlyDrawnMessage];
+                    string targetMessage = ErrorHandler.messageLog[ErrorHandler.messageLog.Count - 1 - currentlyDrawnMessage] ?? "";
 
                     for (int i = 0; i * 100 < targetMessage.Length; i++)
                     {

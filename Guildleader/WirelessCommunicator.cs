@@ -26,7 +26,8 @@ namespace Guildleader
             largeObjectPacket,
             largePacketRepairRequest,
             credentials, //IE logging in information, when that becomes relevant
-            gameStateData, //IE entities, chunks, etc.
+            gameStateDataNotOrdered, //IE entities, chunks, etc.
+            gameStateData, //IE recieving a previous packet would be really bad!
         }
 
         public const int defaultPort = 44500;
@@ -37,6 +38,9 @@ namespace Guildleader
         public void StartListeningThread()
         {
             wirelessThread = new Thread(UDPListeningThread);
+            const int SIO_UDP_CONNRESET = -1744830452;
+            byte[] inValue = new byte[] { 0 }; // == false
+            UDPNode.Client.IOControl(SIO_UDP_CONNRESET, inValue, null);
             wirelessThread.Start();
         }
 
@@ -115,14 +119,18 @@ namespace Guildleader
 
         public byte[] GenerateProperDataPacket(byte[] information, PacketType dataType, Dictionary<PacketType, int> lastSentMessageIDRecords)
         {
+            List<byte> holster = new List<byte>();
+            holster.Add((byte)dataType);
             if (!lastSentMessageIDRecords.ContainsKey(dataType))
             {
                 lastSentMessageIDRecords.Add(dataType, int.MinValue);
             }
-            List<byte> holster = new List<byte>();
-            holster.Add((byte)dataType);
             holster.AddRange(Convert.ToByte(lastSentMessageIDRecords[dataType]));
             holster.AddRange(information);
+            if (!lastSentMessageIDRecords.ContainsKey(dataType))
+            {
+                lastSentMessageIDRecords.Add(dataType, int.MinValue);
+            }
             lastSentMessageIDRecords[dataType]++;
 
             return holster.ToArray();
@@ -147,10 +155,16 @@ namespace Guildleader
 
         public WirelessCommunicator.PacketType stowedPacketType;
 
+        static WirelessCommunicator.PacketType[] PacketsAllowedOutOfOrder = new WirelessCommunicator.PacketType[] {
+            WirelessCommunicator.PacketType.largeObjectPacket,
+        WirelessCommunicator.PacketType.gameStateDataNotOrdered
+        };
+
         public byte[] contents;
 
         public DataPacket() { }
-        public DataPacket(DataPacket toCopy) {
+        public DataPacket(DataPacket toCopy)
+        {
             address = toCopy.address;
             port = toCopy.port;
             stowedPacketType = toCopy.stowedPacketType;
@@ -173,11 +187,12 @@ namespace Guildleader
             {
                 return null;
             }
-            if (!packetDictionary.ContainsKey(dp.stowedPacketType))
+            bool NeedToBeInOrder = !PacketsAllowedOutOfOrder.Contains(dp.stowedPacketType);
+            if (NeedToBeInOrder && !packetDictionary.ContainsKey(dp.stowedPacketType))
             {
                 packetDictionary.Add(dp.stowedPacketType, packetNumber - 1);
             }
-            if (packetDictionary[dp.stowedPacketType] >= packetNumber)
+            if (NeedToBeInOrder && packetDictionary[dp.stowedPacketType] >= packetNumber)
             {
                 return null;
             }
@@ -188,8 +203,9 @@ namespace Guildleader
         }
     }
 
-public class LargeObjectByteHandler
+    public class LargeObjectByteHandler
     {
+
         public Dictionary<string, PacketAssembler> recievedSegments = new Dictionary<string, PacketAssembler> { };
 
         public Dictionary<short, SentPacket> recentlySegmentedPacket = new Dictionary<short, SentPacket> { };
@@ -216,7 +232,7 @@ public class LargeObjectByteHandler
             List<byte> packetIdentifyingInformation = new List<byte>();
             packetIdentifyingInformation.AddRange(Convert.ToByte(lastSentPacket));
             packetIdentifyingInformation.AddRange(Convert.ToByte(short.MaxValue));
-            packetIdentifyingInformation.AddRange(Convert.ToByte(length));
+            packetIdentifyingInformation.AddRange(Convert.ToByte((short)length));
 
             segments.Insert(0, packetIdentifyingInformation.ToArray());
 
@@ -233,6 +249,11 @@ public class LargeObjectByteHandler
 
         public void RecieveSegments(string identifier, byte[] segment)
         {
+            if (segment.Length < sizeof(short) * 2)
+            {
+                ErrorHandler.AddErrorToLog("Warning: LOBH segment recieved was too short to be valid.");
+                return;
+            }
             short packetID = Convert.ToShort(segment, 0);
             short positionInPacket = Convert.ToShort(segment, sizeof(short));
 
@@ -244,6 +265,11 @@ public class LargeObjectByteHandler
             recievedSegments[fullName].packetID = packetID;
             if (positionInPacket == short.MaxValue)
             {
+                if (segment.Length < sizeof(short) * 3)
+                {
+                    ErrorHandler.AddErrorToLog("Warning: LOBH segment recieved was too short to be valid.");
+                    return;
+                }
                 recievedSegments[fullName].maxSize = Convert.ToShort(segment, sizeof(short) * 2);
                 return;
             }
@@ -276,11 +302,20 @@ public class LargeObjectByteHandler
         }
         public void RemoveOldSentPackets(int maxAgeOfPacketsInSeconds)
         {
+            if (recentlySegmentedPacket.Count <= 0)
+            {
+                return;
+            }
             DateTime now = DateTime.Now;
             List<short> toRemove = new List<short>();
-            short[] toCheck = recentlySegmentedPacket.Keys.ToArray();
+            short[] toCheck = new short[recentlySegmentedPacket.Count + 100]; //extra space just in case the array grows
+            recentlySegmentedPacket.Keys.CopyTo(toCheck, 0);
             foreach (short s in toCheck)
             {
+                if (!recentlySegmentedPacket.ContainsKey(s))
+                {
+                    return;
+                }
                 SentPacket sp = recentlySegmentedPacket[s];
                 if ((now - sp.sent).TotalSeconds >= maxAgeOfPacketsInSeconds)
                 {
@@ -311,13 +346,18 @@ public class LargeObjectByteHandler
         public byte[][] GrabAllCompletedPackets()
         {
             string[] packsToCheck = recievedSegments.Keys.ToArray();
-            List<byte[]> completed = new List<byte[]>(); 
+            List<byte[]> completed = new List<byte[]>();
             foreach (string s in packsToCheck)
             {
+                if (recievedSegments[s].fullPacketAlreadyAcknowledged)
+                {
+                    continue;
+                }
                 byte[] pack = recievedSegments[s].GetAssembledPacket();
                 if (pack != null)
                 {
                     completed.Add(pack);
+                    recievedSegments[s].fullPacketAlreadyAcknowledged = true;
                 }
             }
             return completed.ToArray();
@@ -326,8 +366,12 @@ public class LargeObjectByteHandler
 
     public class PacketAssembler
     {
+        public const int maxPacketSegments = 32768;
+
+        public bool fullPacketAlreadyAcknowledged;
+
         public DateTime dateOfLastRecievedPart;
-        byte[][] allSegments = new byte[32768][];
+        byte[][] allSegments = new byte[maxPacketSegments][];
         public short maxSize = short.MaxValue;
         public short packetID = short.MaxValue;
 

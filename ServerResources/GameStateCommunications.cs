@@ -32,14 +32,20 @@ namespace ServerResources
                 lastAssistedClient %= Application.Server.clients.Count;
                 ClientInfo ci = Application.Server.clients[lastAssistedClient];
 
-                Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(0, 0, 0, 2, 2, 0);
+                if ((DateTime.Now - ci.cooldowns.lastChunkUpdateGiven).TotalMilliseconds < 750)
+                {
+                    Thread.Sleep(50);
+                    continue;
+                }
+                ci.cooldowns.lastChunkUpdateGiven = DateTime.Now;
 
+                //below is simply a test implementation
+                Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(0, 0, 0, 1, 1, 0);
                 foreach (Chunk c in testChunks)
                 {
                     byte[] data = c.convertChunkToBytes();
-                    Application.Server.sendDataToOneClient(ci, WirelessCommunicator.PacketType.gameStateData, data, 1);
+                    Application.Server.SendDataToOneClient(ci, WirelessCommunicator.PacketType.gameStateDataNotOrdered, data, 2);
                 }
-
                 Thread.Sleep(20);
             }
         }

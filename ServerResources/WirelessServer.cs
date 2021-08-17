@@ -27,6 +27,15 @@ namespace ServerResources
             {
                 ProcessLatestPacket();
             }
+
+            List<ClientInfo> clientsToRemove = new List<ClientInfo>();
+            DateTime now = DateTime.Now;
+            clientsToRemove.AddRange(clients.FindAll(x => x != null && (now - x.lastRecievedMessage).TotalSeconds > 10 && (now - x.creationDate).TotalMilliseconds > 900));
+            foreach (ClientInfo client in clientsToRemove)
+            {
+                ErrorHandler.AddMessageToLog($"Client at {client.address} has left the game.");
+                clients.Remove(client);
+            }
         }
 
         public override void RecievePacket(IPAddress address, int port, byte[] data)
@@ -49,7 +58,6 @@ namespace ServerResources
             DataPacket dp = DataPacket.GetDataPacket(address, port, data, target.dataSequencingDictionary);
             if (dp == null)
             {
-                ErrorHandler.AddErrorToLog(new Exception("Invalid packet recieved."));
                 return;
             }
             ClientDataPacket cdp = new ClientDataPacket(dp);
@@ -67,7 +75,10 @@ namespace ServerResources
                 case PacketType.heartbeatPing:
                     break;
                 case PacketType.requestPingback:
-                    sendDataToOneClient(dp.relevantClient, PacketType.heartbeatPing, new byte[0], 1);
+                    SendDataToOneClient(dp.relevantClient, PacketType.heartbeatPing, new byte[0], 1);
+                    break;
+                case PacketType.largePacketRepairRequest:
+                    RespondToLargePacketRepairRequest(dp.relevantClient, dp.contents);
                     break;
                 default:
                     ErrorHandler.AddErrorToLog(new Exception("Unhandled packet type: " + dp.stowedPacketType));
@@ -75,20 +86,19 @@ namespace ServerResources
             }
         }
 
-        public void sendDataToOneClient(ClientInfo client, PacketType type, byte[] message, int repeats)
+        public void SendDataToOneClient(ClientInfo client, PacketType type, byte[] message, int repeats)
         {
             byte[] assembledPacket = GenerateProperDataPacket(message, type, client.sentDataRecords);
-
             if (assembledPacket.Length > maxPacketSize)
             {
                 byte[][] split = client.lobh.BreakBytesIntoSendableSegments(assembledPacket, maxPacketSize - 12);
-                sendManyDatasToOneClient(client, PacketType.largeObjectPacket, client.sentDataRecords, split, repeats);
+                SendManyDatasToOneClient(client, PacketType.largeObjectPacket, client.sentDataRecords, split, repeats);
                 return;
             }
 
             SendPacketToGivenEndpoint(client.GetIPEndpoint, assembledPacket);
         }
-        public void sendManyDatasToOneClient(ClientInfo client, PacketType type, Dictionary<PacketType, int> records, byte[][] messages, int repeats)
+        public void SendManyDatasToOneClient(ClientInfo client, PacketType type, Dictionary<PacketType, int> records, byte[][] messages, int repeats)
         {
             foreach (byte[] message in messages)
             {
@@ -99,11 +109,36 @@ namespace ServerResources
                 }
             }
         }
-        public void sendDataToAllClients(PacketType type, byte[] contents, int repeats)
+        public void SendDataToAllClients(PacketType type, byte[] contents, int repeats)
         {
             for (int i = 0; i < clients.Count; i++) //handled this way in case clients are removed mid-process
             {
-                sendDataToOneClient(clients[i], type, contents, repeats);
+                SendDataToOneClient(clients[i], type, contents, repeats);
+            }
+        }
+
+        //server responses
+        public void RespondToLargePacketRepairRequest(ClientInfo client, byte[] message)
+        {
+            if (message.Length <= sizeof(short))
+            {
+                return;
+            }
+            List<byte> toList = new List<byte>(message);
+            short id = Guildleader.Convert.ToShort(message);
+            toList.RemoveRange(0, sizeof(short));
+            List<int> partsToRecover = new List<int>();
+            while (toList.Count >= sizeof(int))
+            {
+                partsToRecover.Add(Guildleader.Convert.ToInt(toList.ToArray()));
+                toList.RemoveRange(0, sizeof(int));
+            }
+
+            byte[][] toResend = client.lobh.GetPartsOfRecentlySentPacket(id, partsToRecover);
+
+            foreach (byte[] resend in toResend)
+            {
+                SendDataToOneClient(client, PacketType.largeObjectPacket, resend, 2);
             }
         }
     }
@@ -125,7 +160,11 @@ namespace ServerResources
         public IPAddress address; public int port;
         public IPEndPoint GetIPEndpoint { get { return new IPEndPoint(address, port); } }
 
+        public readonly DateTime creationDate = DateTime.Now;
+
         public DateTime lastRecievedMessage;
+
+        public ClientInformationGrantingCooldowns cooldowns = new ClientInformationGrantingCooldowns();
 
         public void Update()
         {
@@ -142,5 +181,10 @@ namespace ServerResources
 
         //this value stores what the latest processed request ID was
         public Dictionary<WirelessCommunicator.PacketType, int> dataSequencingDictionary = new Dictionary<WirelessCommunicator.PacketType, int> { };
+    }
+
+    public class ClientInformationGrantingCooldowns
+    {
+        public DateTime lastChunkUpdateGiven;
     }
 }
