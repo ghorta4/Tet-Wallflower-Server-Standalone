@@ -21,7 +21,7 @@ namespace Guildleader
 
         public Dictionary<int, Dictionary<int, Dictionary<int, Chunk>>> allChunks = new Dictionary<int, Dictionary<int, Dictionary<int, Chunk>>> { };
         public static int worldMinx = -500, worldMaxx = 500, worldMiny = -500, worldMaxy = 500, worldMinz = -100, worldMaxz = 50;
-        public const int worldStartSizeX = 10, worldStartSizeY = 10, worldStartSizeZ = 0;
+        public const int worldStartSizeX = 2, worldStartSizeY = 2, worldStartSizeZ = 1;
 
         public const float worldTileSize = 0.1f;
 
@@ -220,8 +220,8 @@ namespace Guildleader
             }
             Chunk chunkResult = null;
             Int3 chunkPos = GetChunkPositionBasedOnTilePosition(x, y, z);
-            Dictionary<int, Dictionary<int, Chunk>> holdera = new Dictionary<int, Dictionary<int, Chunk>>();
-            Dictionary<int, Chunk> holderb = new Dictionary<int, Chunk>();
+            Dictionary<int, Dictionary<int, Chunk>> holdera = null;
+            Dictionary<int, Chunk> holderb = null;
             bool success = allChunks.TryGetValue(chunkPos.x, out holdera);
             if (success)
             {
@@ -235,7 +235,6 @@ namespace Guildleader
             {
                 SingleWorldTile temp = new SingleWorldTile(5, new Int3(x, y, z));
                 return temp;
-                // chunkResult = getChunkData(chunkPos.x, chunkPos.y, chunkPos.z);
             }
             if (!chunkResult.hasCompletedPostProcessingThatRequiresNeighbors)
             {
@@ -260,12 +259,21 @@ namespace Guildleader
             return holster;
         }
 
-        public static Int3 GetChunkPositionBasedOnTilePosition(int x, int y, int z)
+        public Int3 GetChunkPositionBasedOnTilePosition(int x, int y, int z)
         {
             int chunkX = (int)Math.Floor(x / (float)Chunk.defaultx);
             int chunkY = (int)Math.Floor(y / (float)Chunk.defaulty);
             int chunkZ = (int)Math.Floor(z / (float)Chunk.defaultz);
             return new Int3(chunkX, chunkY, chunkZ);
+        }
+
+        public Int3 GetLightAtPosition(Int3 position, Int3 directionFacing)
+        {
+            if (directionFacing.z > 0)
+            {
+                return new Int3(255, 255, 255);
+            }
+            return new Int3(200, 200, 200);
         }
     }
 
@@ -275,7 +283,7 @@ namespace Guildleader
         public bool hasCompletedPostProcessingThatRequiresNeighbors;
         readonly int chunkVersion = 0;
 
-        public const int defaultx = 14, defaulty = 14, defaultz = 3;
+        public const int defaultx = 11, defaulty = 11, defaultz = 2;
         public SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
 
         public Chunk(Int3 position)
@@ -397,7 +405,7 @@ namespace Guildleader
         {
             List<byte> converted = new List<byte>(data);
             int version = Convert.ToInt(data, 0);
-            converted.RemoveRange(0, sizeof(uint));
+            converted.RemoveRange(0, sizeof(int));
             switch (version)
             {
                 case 0:
@@ -447,9 +455,53 @@ namespace Guildleader
             }
             return temp.ToArray();
         }
+        static Chunk GetterV1Simple(List<byte> data, Int3 pos)
+        {
+            Chunk holster = new Chunk(new Int3(pos.x, pos.y, pos.z));
+            bool[] info = Convert.ToBoolArray(data[0]);
+            data.RemoveAt(0);
+            holster.hasCompletedPostProcessingThatRequiresNeighbors = info[0];
+            for (int i = 0; i < holster.tiles.GetLength(0); i++)
+            {
+                for (int j = 0; j < holster.tiles.GetLength(1); j++)
+                {
+                    for (int k = 0; k < holster.tiles.GetLength(2); k++)
+                    {
+                        holster.tiles[i, j, k] = SingleWorldTile.bytesToTileV1Simple(data, new Int3(pos.x * defaultx + i, pos.y * defaulty + j, pos.z * defaultz + k));
+                    }
+                }
+            }
+            return holster;
+        }
+        public byte[] ConvertChunkToBytesSimple()
+        {
+            List<byte> temp = new List<byte>();
+            temp.AddRange(Convert.ToByte(chunkVersion));
+            byte bools = Convert.ToByte(new bool[] { hasCompletedPostProcessingThatRequiresNeighbors, false, false, false, false, false, false, false });
+            temp.Add(bools);
+            for (int i = 0; i < tiles.GetLength(0); i++)
+            {
+                for (int j = 0; j < tiles.GetLength(1); j++)
+                {
+                    for (int k = 0; k < tiles.GetLength(2); k++)
+                    {
+                        temp.AddRange(tiles[i, j, k].getBytesSimpleV1());
+                    }
+                }
+            }
+            return temp.ToArray();
+        }
         public byte[] ConvertChunkToBytesWithPositionInFront(Int3 pos)
         {
             List<byte> holster = new List<byte>(ConvertChunkToBytes());
+            holster.InsertRange(0, Convert.ToByte(pos.z));
+            holster.InsertRange(0, Convert.ToByte(pos.y));
+            holster.InsertRange(0, Convert.ToByte(pos.x));
+            return holster.ToArray();
+        }
+        public byte[] ConvertChunkToBytesWithPositionInFrontUsingSimples(Int3 pos)
+        {
+            List<byte> holster = new List<byte>(ConvertChunkToBytesSimple());
             holster.InsertRange(0, Convert.ToByte(pos.z));
             holster.InsertRange(0, Convert.ToByte(pos.y));
             holster.InsertRange(0, Convert.ToByte(pos.x));

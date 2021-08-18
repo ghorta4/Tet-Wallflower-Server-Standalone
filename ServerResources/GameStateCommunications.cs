@@ -32,7 +32,7 @@ namespace ServerResources
                 lastAssistedClient %= Application.Server.clients.Count;
                 ClientInfo ci = Application.Server.clients[lastAssistedClient];
 
-                if ((DateTime.Now - ci.cooldowns.lastChunkUpdateGiven).TotalMilliseconds < 750)
+                if ((DateTime.Now - ci.cooldowns.lastChunkUpdateGiven).TotalMilliseconds < 250)
                 {
                     Thread.Sleep(50);
                     continue;
@@ -40,10 +40,10 @@ namespace ServerResources
                 ci.cooldowns.lastChunkUpdateGiven = DateTime.Now;
 
                 //below is simply a test implementation
-                Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(0, 0, 0, 1, 1, 0);
+                Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(0, 0, 0, 1, 1, 1);
                 foreach (Chunk c in testChunks)
                 {
-                    byte[] data = c.ConvertChunkToBytesWithPositionInFront(c.chunkPos);
+                    byte[] data = c.ConvertChunkToBytesWithPositionInFrontUsingSimples(c.chunkPos);
                     Application.Server.SendDataToOneClient(ci, WirelessCommunicator.PacketType.gameStateDataNotOrdered, data, 2);
                 }
                 Thread.Sleep(20);

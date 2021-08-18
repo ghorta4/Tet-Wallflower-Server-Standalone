@@ -32,22 +32,41 @@ namespace Guildleader
             bytes.AddRange(Convert.ToByte(tileHealth));
             return bytes.ToArray();
         }
+        public byte[] getBytesSimpleV1()
+        {
+            List<byte> bytes = new List<byte> { };
+            bytes.AddRange(Convert.ToByte(tileID));
+            return bytes.ToArray();
+        }
 
         public static SingleWorldTile bytesToTileV1(List<byte> data, Int3 pos)
         {
-            short tileID = quickUshort(data);
+            short tileID = QuickShort(data);
             SingleWorldTile blank = new SingleWorldTile(tileID, pos);
-            data.RemoveRange(0, sizeof(ushort));
-            blank.tileHealth = quickUshort(data);
-            data.RemoveRange(0, sizeof(ushort));
-            // blank.variant = quickUshort(data);
-            // data.RemoveRange(0, sizeof(ushort));
+            data.RemoveRange(0, sizeof(short));
+            blank.tileHealth = QuickShort(data);
+            data.RemoveRange(0, sizeof(short));
+            return blank;
+        }
+        public static SingleWorldTile bytesToTileV1Simple(List<byte> data, Int3 pos)
+        {
+            short tileID = QuickShort(data);
+            SingleWorldTile blank = new SingleWorldTile(tileID, pos);
+            data.RemoveRange(0, sizeof(short));
             return blank;
         }
 
-        public static short quickUshort(List<byte> data)
+        public static short QuickShort(List<byte> data)
         {
-            return (short)(data[0] | (data[1] << 8));
+            if (BitConverter.IsLittleEndian)
+            {
+                return (short)(data[1] | (data[0] << 8));
+            }
+            else
+            {
+                return (short)(data[0] | (data[1] << 8));
+            }
+            
         }
 
         public TileProperties properties
