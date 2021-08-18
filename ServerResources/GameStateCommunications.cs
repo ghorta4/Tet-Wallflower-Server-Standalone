@@ -43,7 +43,7 @@ namespace ServerResources
                 Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(0, 0, 0, 1, 1, 0);
                 foreach (Chunk c in testChunks)
                 {
-                    byte[] data = c.convertChunkToBytesWithPositionInFront(c.chunkPos);
+                    byte[] data = c.ConvertChunkToBytesWithPositionInFront(c.chunkPos);
                     Application.Server.SendDataToOneClient(ci, WirelessCommunicator.PacketType.gameStateDataNotOrdered, data, 2);
                 }
                 Thread.Sleep(20);

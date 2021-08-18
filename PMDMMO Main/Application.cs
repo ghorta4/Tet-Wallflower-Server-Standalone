@@ -7,6 +7,9 @@ using ServerResources;
 using System.Net;
 using System.Threading;
 
+using Guildleader.Entities;
+using Guildleader.Entities.BasicEntities;
+
 namespace PMDMMO_Main
 {
 

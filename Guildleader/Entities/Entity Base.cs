@@ -26,7 +26,7 @@ namespace Guildleader.Entities
         public static Dictionary<EntityKey, Type> EntityDictionary = new Dictionary<EntityKey, Type>
         {
             {EntityKey.DefaultEntity, typeof(Entity) },
-            {EntityKey.PhysicalObject, typeof(PhysicalObjects) },
+            {EntityKey.PhysicalObject, typeof(PhysicalObject) },
         };
         public static Dictionary<Type, EntityKey> ReverseEntityDictionary;
 

@@ -62,7 +62,7 @@ namespace Guildleader
             else
             {
                 byte[] chunkData = FileAccess.LoadFile(chunkPath);
-                chu = Chunk.getChunkFromBytes(chunkData, new Int3(xPos, yPos, zPos));
+                chu = Chunk.GetChunkFromBytes(chunkData, new Int3(xPos, yPos, zPos));
             }
             if (!hasXpos)
             {
@@ -106,7 +106,7 @@ namespace Guildleader
         {
             InitializeChunkInfoPath();
             string fileName = GetNameBasedOnPosition(xPos, yPos, zPos);
-            FileAccess.WriteBytesInsideCurrentDefaultDirectoryInSubfolder(chu.convertChunkToBytes(), fileName, FileAccess.ChunkStorageName);
+            FileAccess.WriteBytesInsideCurrentDefaultDirectoryInSubfolder(chu.ConvertChunkToBytes(), fileName, FileAccess.ChunkStorageName);
         }
         public void UnloadDistantChunkData(Int3 chunkPos, int cutoffRange)
         {
@@ -365,7 +365,7 @@ namespace Guildleader
             hasCompletedPostProcessingThatRequiresNeighbors = true;
         }
 
-        SingleWorldTile getQuickTile(Int3 worldPos)
+        SingleWorldTile GetQuickTile(Int3 worldPos)
         {
             int localx = worldPos.x - chunkPos.x * defaultx;
             int localy = worldPos.y - chunkPos.y * defaulty;
@@ -377,23 +377,23 @@ namespace Guildleader
             }
             return tiles[localx, localy, localz];
         }
-        SingleWorldTile getTileFromNeighborArray(SingleWorldTile[,,] neighborArray, Int3 worldPositionOfTile, int xWithinArray, int yWithinArray, int zWithinArray)
+        SingleWorldTile GetTileFromNeighborArray(SingleWorldTile[,,] neighborArray, Int3 worldPositionOfTile, int xWithinArray, int yWithinArray, int zWithinArray)
         {
             if (neighborArray[xWithinArray, yWithinArray, zWithinArray] == null)
             {
-                neighborArray[xWithinArray, yWithinArray, zWithinArray] = getQuickTile(worldPositionOfTile);
+                neighborArray[xWithinArray, yWithinArray, zWithinArray] = GetQuickTile(worldPositionOfTile);
             }
             return neighborArray[xWithinArray, yWithinArray, zWithinArray];
         }
 
-        static void swapTiles(SingleWorldTile a, SingleWorldTile b)
+        static void SwapTiles(SingleWorldTile a, SingleWorldTile b)
         {
             SingleWorldTile temp = a;
             a = b;
             b = temp;
         }
 
-        public static Chunk getChunkFromBytes(byte[] data, Int3 pos)
+        public static Chunk GetChunkFromBytes(byte[] data, Int3 pos)
         {
             List<byte> converted = new List<byte>(data);
             int version = Convert.ToInt(data, 0);
@@ -401,7 +401,7 @@ namespace Guildleader
             switch (version)
             {
                 case 0:
-                    return getterV1(converted, pos);
+                    return GetterV1(converted, pos);
                 default:
                     ErrorHandler.AddErrorToLog("Unrecognized chunk version:" + version);
                     Chunk temp = new Chunk(new Int3(pos.x, pos.y, pos.z));
@@ -410,7 +410,7 @@ namespace Guildleader
             }
 
         }
-        static Chunk getterV1(List<byte> data, Int3 pos)
+        static Chunk GetterV1(List<byte> data, Int3 pos)
         {
             Chunk holster = new Chunk(new Int3(pos.x, pos.y, pos.z));
             bool[] info = Convert.ToBoolArray(data[0]);
@@ -429,7 +429,7 @@ namespace Guildleader
             return holster;
         }
 
-        public byte[] convertChunkToBytes()
+        public byte[] ConvertChunkToBytes()
         {
             List<byte> temp = new List<byte>();
             temp.AddRange(Convert.ToByte(chunkVersion));
@@ -447,9 +447,9 @@ namespace Guildleader
             }
             return temp.ToArray();
         }
-        public byte[] convertChunkToBytesWithPositionInFront(Int3 pos)
+        public byte[] ConvertChunkToBytesWithPositionInFront(Int3 pos)
         {
-            List<byte> holster = new List<byte>(convertChunkToBytes());
+            List<byte> holster = new List<byte>(ConvertChunkToBytes());
             holster.InsertRange(0, Convert.ToByte(pos.z));
             holster.InsertRange(0, Convert.ToByte(pos.y));
             holster.InsertRange(0, Convert.ToByte(pos.x));

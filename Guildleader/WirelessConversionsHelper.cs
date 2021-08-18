@@ -205,5 +205,16 @@ namespace Guildleader
 
             return result;
         }
+
+        public static int[] ExtractInts(List<byte> data, int count)
+        {
+            int[] temp = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                temp[i] = Convert.ToInt(data.ToArray(), sizeof(int) * i);
+            }
+            data.RemoveRange(0, sizeof(int) * count);
+            return temp;
+        }
     }
 }

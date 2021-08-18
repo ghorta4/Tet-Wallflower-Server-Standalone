@@ -14,7 +14,11 @@ namespace Guildleader
         static string BackupFileLocation { get { return string.Concat(SaveLocation, "Backups/"); } }
         public static string LocalFilesLocation { get { return string.Concat(SaveLocation, "LocalFiles/"); } }
 
+        public const string LibraryLocation = "Library/";
+
         public const string ChunkStorageName = "chunks/";
+        public static string TilesLocation { get { return string.Concat(LibraryLocation, "Tilesets/"); } }
+        public static string EntitySpritesLocation { get { return string.Concat(LibraryLocation, "Entities/"); } }
 
         static string CurrentDefaultDirectory;
 
