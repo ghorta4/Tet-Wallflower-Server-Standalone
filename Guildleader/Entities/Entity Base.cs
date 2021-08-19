@@ -20,13 +20,15 @@ namespace Guildleader.Entities
         {
             Invalid,
             DefaultEntity,
-            PhysicalObject
+            Actor,
+            Pokemon
         }
 
         public static Dictionary<EntityKey, Type> EntityDictionary = new Dictionary<EntityKey, Type>
         {
             {EntityKey.DefaultEntity, typeof(Entity) },
-            {EntityKey.PhysicalObject, typeof(PhysicalObject) },
+            {EntityKey.Actor, typeof(Actors) },
+            {EntityKey.Pokemon, typeof(Pokemon) },
         };
         public static Dictionary<Type, EntityKey> ReverseEntityDictionary;
 

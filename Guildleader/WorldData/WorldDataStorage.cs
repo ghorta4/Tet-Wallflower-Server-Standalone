@@ -283,7 +283,7 @@ namespace Guildleader
         public bool hasCompletedPostProcessingThatRequiresNeighbors;
         readonly int chunkVersion = 0;
 
-        public const int defaultx = 11, defaulty = 11, defaultz = 2;
+        public const int defaultx = 11, defaulty = 11, defaultz = 8;
         public SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
 
         public Chunk(Int3 position)
@@ -347,9 +347,9 @@ namespace Guildleader
                 {
                     for (int k = 0; k < tiles.GetLength(2); k++)
                     {
-                        Int3 tilePos = new Int3(chunkPos.x * defaultx + i, chunkPos.y * defaulty + j, k);
+                        Int3 tilePos = new Int3(chunkPos.x * defaultx + i, chunkPos.y * defaulty + j, chunkPos.z * defaultz + k);
                         short desiredID = 0;
-                        switch (k)
+                        switch (tilePos.z)
                         {
                             case 0:
                                 desiredID = 1;

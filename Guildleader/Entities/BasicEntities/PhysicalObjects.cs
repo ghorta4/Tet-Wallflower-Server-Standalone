@@ -5,12 +5,15 @@ using Guildleader.Entities;
 
 namespace Guildleader.Entities.BasicEntities
 {
-    public class PhysicalObject : Entity
+    public abstract class PhysicalObject : Entity
     {
         public virtual Int3 Size { get { return Int3.One; } }
         public int Durability;
 
         public PhysicalObject() { }
+
+        public abstract string GetSpriteName();
+        string stringRetrievedFromServer;
 
         public override byte[] ConvertToBytesForDataStorage()
         {
@@ -18,7 +21,9 @@ namespace Guildleader.Entities.BasicEntities
         }
         public override byte[] ConvertToBytesForClient()
         {
-            return PhysicalObjectConversions();
+            List<byte> temp = new List<byte> (PhysicalObjectConversions());
+            temp.AddRange(Convert.ToByte(GetSpriteName()));
+            return temp.ToArray();
         }
 
         byte[] PhysicalObjectConversions()
@@ -43,6 +48,51 @@ namespace Guildleader.Entities.BasicEntities
         {
             int[] extracted = Convert.ExtractInts(data, 1);
             Durability = extracted[0];
+            string[] strings = Convert.ExtractStrings(data, 1);
+            stringRetrievedFromServer = strings[0];
+        }
+
+        //Methods
+
+        //The below function is used to move entities without entering impassible blocks.
+        public void GentleShove(Int3 direction, int maxSlopeHeight)
+        {
+            Int3 endPosition = worldPositon;
+            int maxChecks = (int)Math.Round((double)Math.Min(10, (int)direction.Magnitude + 1));
+            int numberOfTimesLifted = 0;
+            for (int i = 0; i <= maxChecks; i++)
+            {
+                Int3 targetPos = worldPositon + i * direction / maxChecks + new Int3(0, 0, 1) * (numberOfTimesLifted);
+                SingleWorldTile[,,] occupiedArea = WorldManager.currentWorld.GetAllTilesInArea(targetPos - new Int3(0, 0, 1) * maxSlopeHeight, Size + new Int3(0, 0, 1) * maxSlopeHeight * 2);
+                int mostAppropriateZHeight = -9999999;
+                for (int z = 0; z < occupiedArea.GetLength(2); z++)
+                {
+                    for (int x = 0; x < occupiedArea.GetLength(0); x++)
+                    {
+                        for (int y = 0; y < occupiedArea.GetLength(1); y++)
+                        {
+                            SingleWorldTile swt = occupiedArea[x, y, z];
+                            if (!swt.properties.tags.Contains("nonsolid"))
+                            {
+                                goto blockBreak;
+                            }
+                        }
+                    }
+                    if (Math.Abs(z - maxSlopeHeight) < Math.Abs(mostAppropriateZHeight - maxSlopeHeight))
+                    {
+                        mostAppropriateZHeight = z;
+                    }
+                    numberOfTimesLifted = mostAppropriateZHeight - maxSlopeHeight;
+                    blockBreak:;
+                }
+                if (mostAppropriateZHeight < -maxSlopeHeight)
+                {
+                    //could not find space to shove!
+                    break;
+                }
+                endPosition = targetPos + new Int3(0, 0, 1) * (numberOfTimesLifted);
+            }
+            worldPositon = endPosition;
         }
     }
 }

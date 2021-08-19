@@ -57,6 +57,24 @@ namespace Guildleader
         {
             return new Int3(a.x + b.x, a.y+b.y, a.z+b.z);
         }
+        public static Int3 operator -(Int3 a, Int3 b)
+        {
+            return new Int3(a.x - b.x, a.y - b.y, a.z - b.z);
+        }
+        public static Int3 operator * (Int3 a, int i)
+        {
+            return new Int3(a.x*i, a.y * i, a.z * i);
+        }
+        public static Int3 operator * (int i, Int3 a)
+        {
+            return a*i;
+        }
+        public static Int3 operator /(Int3 a, int b)
+        {
+            return new Int3(a.x/b, a.y/b, a.z/b);
+        }
+
+        public double Magnitude { get { return Math.Sqrt(x*x + y*y + z*z); } }
     }
 
     public static class RNG

@@ -211,9 +211,21 @@ namespace Guildleader
             int[] temp = new int[count];
             for (int i = 0; i < count; i++)
             {
-                temp[i] = Convert.ToInt(data.ToArray(), sizeof(int) * i);
+                temp[i] = ToInt(data.ToArray(), sizeof(int) * i);
             }
             data.RemoveRange(0, sizeof(int) * count);
+            return temp;
+        }
+        public static string[] ExtractStrings(List<byte> b, int count)
+        {
+            string[] temp = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                int length = ToInt(b.ToArray());
+                b.RemoveRange(0, sizeof(int));
+                temp[i] = Encoding.UTF8.GetString(b.ToArray(), 0, length);
+                b.RemoveRange(0, length);
+            }
             return temp;
         }
     }
