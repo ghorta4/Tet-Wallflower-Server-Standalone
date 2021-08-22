@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using Guildleader.Entities;
 
 namespace Guildleader
 {
@@ -40,6 +41,10 @@ namespace Guildleader
             }
         }
     
+        public Chunk GetChunkData(Int3 pos)
+        {
+            return GetChunkData(pos.x, pos.y, pos.z);
+        }
         public Chunk GetChunkData(int xPos, int yPos, int zPos)
         {
             InitializeChunkInfoPath();
@@ -285,6 +290,8 @@ namespace Guildleader
 
         public const int defaultx = 12, defaulty = 12, defaultz = 2;
         public SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
+
+        public List<Entity> entitiesLocatedWithinChunk = new List<Entity>();
 
         public Chunk(Int3 position)
         {

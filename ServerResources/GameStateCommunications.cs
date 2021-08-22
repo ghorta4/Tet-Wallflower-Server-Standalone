@@ -42,8 +42,13 @@ namespace ServerResources
                 ci.cooldowns.lastChunkUpdateGiven = DateTime.Now;
 
                 PlayerPokemon poke = ci.thisUsersPokemon;
+                if (poke == null)
+                {
+                    continue;
+                }
                 Int3 chunkPos = poke.GetChunkPosition();
-                //below is simply a test implementation
+                ErrorHandler.AddMessageToLog("pos" + chunkPos);
+                //below grabs all chunks in a nearby 9x9x9 area and shares them
                 Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(chunkPos.x, chunkPos.y, chunkPos.z, 1, 1, 1);
                 foreach (Chunk c in testChunks)
                 {

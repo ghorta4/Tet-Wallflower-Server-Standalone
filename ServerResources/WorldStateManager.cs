@@ -28,6 +28,7 @@ namespace ServerResources
             {
                 return;
             }
+            ErrorHandler.AddMessageToLog("updating!");
             SpawnInPlayerCharacters();
         }
 
@@ -41,6 +42,7 @@ namespace ServerResources
                 }
 
                 ci.thisUsersPokemon = new PlayerPokemon();
+                ci.thisUsersPokemon.Initialize();
             }
         }
     }

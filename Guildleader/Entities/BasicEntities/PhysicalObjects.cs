@@ -10,8 +10,6 @@ namespace Guildleader.Entities.BasicEntities
         public virtual Int3 Size { get { return Int3.One; } }
         public int Durability;
 
-        public PhysicalObject() { }
-
         public abstract string GetSpriteName();
         string stringRetrievedFromServer;
 

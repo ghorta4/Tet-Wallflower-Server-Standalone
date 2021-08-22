@@ -20,9 +20,8 @@ namespace Guildleader
                 {
                     PokemonProfile profile = new PokemonProfile(sr, fi.Name);
                     string identifyingName = profile.IdentifyingName; 
-                    PokemonProfile duplicate1 = null, duplicate2 = null;
-                    bool alreadyHasInternalID = PokemonByInternalID.TryGetValue(profile.internalID, out duplicate1);
-                    bool alreadyHasPokemonOfName = PokemonByInternalID.TryGetValue(profile.IdentifyingName, out duplicate2);
+                    bool alreadyHasInternalID = PokemonByInternalID.TryGetValue(profile.internalID, out PokemonProfile duplicate1);
+                    bool alreadyHasPokemonOfName = PokemonByInternalID.TryGetValue(profile.IdentifyingName, out PokemonProfile duplicate2);
 
                     if (alreadyHasInternalID)
                     {
