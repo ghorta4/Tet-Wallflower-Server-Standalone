@@ -8,10 +8,7 @@
 
   <ItemGroup>
     <Reference Include="Guildleader">
-      <HintPath>..\Guildleader\bin\Debug\netstandard2.0\Guildleader.dll</HintPath>
-    </Reference>
-    <Reference Include="ServerResources">
-      <HintPath>..\ServerResources\bin\Debug\netstandard2.0\ServerResources.dll</HintPath>
+      <HintPath>..\..\Server Standalone\Guildleader\bin\Debug\netstandard2.0\Guildleader.dll</HintPath>
     </Reference>
   </ItemGroup>
 

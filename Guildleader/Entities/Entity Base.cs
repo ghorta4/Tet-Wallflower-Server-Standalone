@@ -7,10 +7,13 @@ namespace Guildleader.Entities
 {
     public class Entity
     {
-        public Int3 worldPositon = Int3.Zero;
-        public Int3 currentChunk; //used by the server to know when someone/something has shifted chunk; and, as such, allows us to know when to move us from one chunk to another
+        public Int3 worldPositon;
 
-        public int id = int.MaxValue;
+        public Int3 currentChunk;
+
+        public Entity() {
+
+        }
 
         public short buildVersion; //override this every time the method of serialization changes
 
@@ -106,7 +109,6 @@ namespace Guildleader.Entities
             {
                 newEnt.ReadEntityFromBytesServer(data);
             }
-            newEnt.Initialize();
             return newEnt;
         }
 
@@ -120,21 +122,6 @@ namespace Guildleader.Entities
             }
             data.RemoveRange(0, numberofInts * sizeof(int));
             worldPositon = new Int3(extractedPos[0], extractedPos[1], extractedPos[2]);
-        }
-
-        //functions for an entity!
-        static int lastAssignedEntityID;
-        public void AssignID()
-        {
-            id = lastAssignedEntityID;
-            lastAssignedEntityID++;
-        }
-
-        public void Initialize() //sets starting position of the entity
-        {
-            currentChunk = GetChunkPosition();
-            Chunk c = WorldManager.currentWorld.GetChunkData(currentChunk);
-            c.entitiesLocatedWithinChunk.Add(this);
         }
     }
 }

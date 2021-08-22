@@ -8,7 +8,7 @@ namespace Guildleader.Entities.BasicEntities
     {
         public override string GetSpriteName()
         {
-            return "";
+            throw new NotImplementedException();
         }
     }
 }
