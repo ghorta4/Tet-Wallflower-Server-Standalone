@@ -8,7 +8,8 @@ namespace Guildleader.Entities
     public class Entity
     {
         public Int3 worldPositon;
-        public Int3 GetCurrentChunk { get { return new Int3((int)Math.Floor((float)worldPositon.x / Chunk.defaultx), (int)Math.Floor((float)worldPositon.y / Chunk.defaulty), (int)Math.Floor((float)worldPositon.z / Chunk.defaultz)); } }
+
+        public Int3 currentChunk;
 
         public Entity() {
 
