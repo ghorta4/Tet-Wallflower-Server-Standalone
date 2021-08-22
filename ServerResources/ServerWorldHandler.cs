@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Guildleader;
+using Guildleader.Entities;
 
 namespace ServerResources
 {
@@ -82,6 +83,7 @@ namespace ServerResources
             threadCoordinator[threadID] = 999;
         }
 
+        public Dictionary<int, Dictionary<int, Dictionary<int, Entity>>> EntitiesByChunk = new Dictionary<int, Dictionary<int, Dictionary<int, Entity>>> { };
         //world generation
         static int lastTakenThread;
         public void UpdateAllChunksThatNeedNeighborUpdates()

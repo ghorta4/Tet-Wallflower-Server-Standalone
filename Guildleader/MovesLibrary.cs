@@ -22,5 +22,7 @@ namespace Guildleader
 
         public readonly int BasePower;
         public readonly PokemonProfile.PokemonType MoveType;
+
+        public string[] tags;
     }
 }

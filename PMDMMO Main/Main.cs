@@ -10,6 +10,12 @@ namespace Guildleader
 
         public static void InitializeAll(WirelessCommunicator wifiComm)
         {
+            TileLibrary.LoadTileLibrary();
+
+            MovesLibrary.LoadMovesLibrary();
+            PokemonLibrary.InitializePokemonLibrary();
+            PassiveAbilityLibrary.LoadAbilityLibrary();
+
             Entities.Entity.InitializeEntities();
             FileAccess.Initialize();
             wifiComm.Initialize();

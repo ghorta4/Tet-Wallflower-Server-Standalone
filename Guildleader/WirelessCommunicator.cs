@@ -26,8 +26,9 @@ namespace Guildleader
             largeObjectPacket,
             largePacketRepairRequest,
             credentials, //IE logging in information, when that becomes relevant
-            gameStateDataNotOrdered, //IE entities, chunks, etc.
-            gameStateData, //IE recieving a previous packet would be really bad!
+            gameStateDataNotOrdered, //Anonymous placeholder - IE entities, chunks, etc.
+            gameStateData, //Anonymous placeholder - IE recieving a previous packet would be really bad!
+            chunkInfo
         }
 
         public const int defaultPort = 44500;
@@ -157,7 +158,8 @@ namespace Guildleader
 
         static WirelessCommunicator.PacketType[] PacketsAllowedOutOfOrder = new WirelessCommunicator.PacketType[] {
             WirelessCommunicator.PacketType.largeObjectPacket,
-        WirelessCommunicator.PacketType.gameStateDataNotOrdered
+        WirelessCommunicator.PacketType.gameStateDataNotOrdered,
+        WirelessCommunicator.PacketType.chunkInfo
         };
 
         public byte[] contents;
@@ -227,6 +229,7 @@ namespace Guildleader
 
                 counter++;
             }
+
             int length = segments.Count();
 
             List<byte> packetIdentifyingInformation = new List<byte>();
@@ -244,6 +247,7 @@ namespace Guildleader
             {
                 lastSentPacket = 0;
             }
+
             return array;
         }
 
@@ -263,6 +267,7 @@ namespace Guildleader
                 recievedSegments.Add(fullName, new PacketAssembler());
             }
             recievedSegments[fullName].packetID = packetID;
+            
             if (positionInPacket == short.MaxValue)
             {
                 if (segment.Length < sizeof(short) * 3)
@@ -275,13 +280,14 @@ namespace Guildleader
             }
 
             byte[] actualData = segment.Skip(sizeof(short) * 2).Take(segment.Length - sizeof(short) * 2).ToArray();
+
             recievedSegments[fullName].AddBytePacket(positionInPacket, actualData);
         }
 
         public void RunCleanup()
         {
-            RemoveOldRecievedSegments(15);
-            RemoveOldSentPackets(30);
+            RemoveOldRecievedSegments(10);
+            RemoveOldSentPackets(15);
         }
         public void RemoveOldRecievedSegments(int maxAgeOfPacketsInSeconds)
         {
@@ -403,6 +409,7 @@ namespace Guildleader
                 }
                 holster.AddRange(allSegments[i]);
             }
+
             return holster.ToArray();
         }
 

@@ -69,6 +69,12 @@ namespace Guildleader.Entities
             return data.ToArray();
         }
 
+        //puts the entity into the world's entity library chunk sorter
+        public Int3 GetChunkPosition()
+        {
+            return WorldDataStorageModuleGeneric.GetChunkPositionBasedOnTilePosition(worldPositon.x, worldPositon.y, worldPositon.z);
+        }
+
         //Note: When overriding this function, always remove the bytes you used to make daisy chaining easier down the line.
         public virtual void ReadEntityFromBytesServer(List<byte> data)
         {

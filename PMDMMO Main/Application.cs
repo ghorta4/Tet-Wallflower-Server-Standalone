@@ -31,7 +31,6 @@ namespace PMDMMO_Main
 
             FileAccess.SetDefaultDirectory(FileAccess.AssetsFileLocation);
 
-            TileLibrary.LoadTileLibrary();
             InputHandler.inputThread = new Thread(InputHandler.HandleUserInput);
             InputHandler.inputThread.Start();
             ErrorHandler.AddMessageToLog("World generating...");
@@ -49,6 +48,8 @@ namespace PMDMMO_Main
                 {
                     requestApplicationClosed = true;
                 }
+                WorldStateManager.Update();
+                GameStateCommunications.ShareServerStateThread();
             }
             StartupAndEndFunctions.CleanupAll();
             ErrorHandler.AddMessageToLog("Server ended. Press any key to continue.");

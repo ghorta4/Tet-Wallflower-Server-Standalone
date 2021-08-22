@@ -259,7 +259,7 @@ namespace Guildleader
             return holster;
         }
 
-        public Int3 GetChunkPositionBasedOnTilePosition(int x, int y, int z)
+        public static Int3 GetChunkPositionBasedOnTilePosition(int x, int y, int z)
         {
             int chunkX = (int)Math.Floor(x / (float)Chunk.defaultx);
             int chunkY = (int)Math.Floor(y / (float)Chunk.defaulty);
@@ -283,7 +283,7 @@ namespace Guildleader
         public bool hasCompletedPostProcessingThatRequiresNeighbors;
         readonly int chunkVersion = 0;
 
-        public const int defaultx = 11, defaulty = 11, defaultz = 8;
+        public const int defaultx = 12, defaulty = 12, defaultz = 2;
         public SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
 
         public Chunk(Int3 position)
@@ -349,7 +349,7 @@ namespace Guildleader
                     {
                         Int3 tilePos = new Int3(chunkPos.x * defaultx + i, chunkPos.y * defaulty + j, chunkPos.z * defaultz + k);
                         short desiredID = 0;
-                        switch (tilePos.z)
+                        switch ((tilePos.x + tilePos.y + tilePos.z)%4)
                         {
                             case 0:
                                 desiredID = 1;
@@ -401,6 +401,15 @@ namespace Guildleader
             b = temp;
         }
 
+        public static Chunk ConvertBytesWithPositionInFrontToChunkSimple(byte[] byte_array)
+        {
+            int x = Convert.ToInt(byte_array, 0);
+            int y = Convert.ToInt(byte_array, sizeof(int));
+            int z = Convert.ToInt(byte_array, sizeof(int) * 2);
+            byte[] bytes_without_position = new byte[byte_array.Length - (sizeof(int) * 3)];
+            Array.Copy(byte_array, sizeof(int) * 3, bytes_without_position, 0, bytes_without_position.Length);
+            return GetterV1Simple(new List<byte>(bytes_without_position), new Int3(x, y, z));
+        }
         public static Chunk GetChunkFromBytes(byte[] data, Int3 pos)
         {
             List<byte> converted = new List<byte>(data);
@@ -458,6 +467,7 @@ namespace Guildleader
         static Chunk GetterV1Simple(List<byte> data, Int3 pos)
         {
             Chunk holster = new Chunk(new Int3(pos.x, pos.y, pos.z));
+            int chunkVersion = Convert.ExtractInts(data, 1)[0];
             bool[] info = Convert.ToBoolArray(data[0]);
             data.RemoveAt(0);
             holster.hasCompletedPostProcessingThatRequiresNeighbors = info[0];
@@ -507,14 +517,6 @@ namespace Guildleader
             holster.InsertRange(0, Convert.ToByte(pos.x));
             return holster.ToArray();
         }
-        public static Chunk ConvertBytesWithPositionInFrontToChunk(byte[] byte_array)
-        {
-            int x = Convert.ToInt(byte_array, 0);
-            int y = Convert.ToInt(byte_array, sizeof(int));
-            int z = Convert.ToInt(byte_array, sizeof(int) * 2);
-            byte[] bytes_without_position = new byte[byte_array.Length - (sizeof(int) * 3)];
-            Array.Copy(byte_array, sizeof(int) * 3, bytes_without_position, 0, bytes_without_position.Length);
-            return GetChunkFromBytes(bytes_without_position, new Int3(x, y, z));
-        }
+
     }
 }

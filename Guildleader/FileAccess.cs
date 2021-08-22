@@ -17,6 +17,9 @@ namespace Guildleader
         public const string ChunkStorageName = "chunks/";
         public static string TilesLocation { get { return "Tilesets/"; } }
         public static string EntitySpritesLocation { get { return "Entities/"; } }
+        public static string PokemonInfoLocation { get { return "PokemonInfo/"; } }
+        public static string MoveInfoLocation { get { return "Moves/"; } }
+        public static string AbilityInfoLocation { get { return "Abilities/"; } }
 
         static string CurrentDefaultDirectory;
 

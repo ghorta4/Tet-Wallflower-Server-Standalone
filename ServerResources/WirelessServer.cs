@@ -3,6 +3,8 @@ using Guildleader;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Linq;
+using Guildleader.Entities.BasicEntities;
 
 namespace ServerResources
 {
@@ -28,13 +30,13 @@ namespace ServerResources
                 ProcessLatestPacket();
             }
 
-            List<ClientInfo> clientsToRemove = new List<ClientInfo>();
+            List<ClientInfo> clientsToDisconnect = new List<ClientInfo>();
             DateTime now = DateTime.Now;
-            clientsToRemove.AddRange(clients.FindAll(x => x != null && (now - x.lastRecievedMessage).TotalSeconds > 10 && (now - x.creationDate).TotalMilliseconds > 900));
-            foreach (ClientInfo client in clientsToRemove)
+            clientsToDisconnect.AddRange(clients.FindAll(x => x.currentlyConnected && x != null && (now - x.lastRecievedMessage).TotalSeconds > 10 && (now - x.creationDate).TotalMilliseconds > 900));
+            foreach (ClientInfo client in clientsToDisconnect) //since we dont want players disconnecting just to not lose progress/anything, we simply mark the accounts as inactive
             {
-                ErrorHandler.AddMessageToLog($"Client at {client.address} has left the game.");
-                clients.Remove(client);
+                ErrorHandler.AddMessageToLog($"Client at {client.address} has temporarily left the game.");
+                client.currentlyConnected = false;
             }
         }
 
@@ -46,6 +48,11 @@ namespace ServerResources
                 if (ci.address.ToString() == address.ToString() && ci.port == port)
                 {
                     target = ci;
+                    if (!ci.currentlyConnected)
+                    {
+                        ci.currentlyConnected = true;
+                        ErrorHandler.AddMessageToLog($"Client {ci.address.ToString()} has reconnected.");
+                    }
                     break;
                 }
             }
@@ -53,7 +60,7 @@ namespace ServerResources
             {
                 target = new ClientInfo(address, port);
                 clients.Add(target);
-                ErrorHandler.AddMessageToLog("New client connected! :D");
+                ErrorHandler.AddMessageToLog($"New client connected from {target.GetIPEndpoint.ToString()}! :D");
             }
             DataPacket dp = DataPacket.GetDataPacket(address, port, data, target.dataSequencingDictionary);
             if (dp == null)
@@ -91,7 +98,7 @@ namespace ServerResources
             byte[] assembledPacket = GenerateProperDataPacket(message, type, client.sentDataRecords);
             if (assembledPacket.Length > maxPacketSize)
             {
-                byte[][] split = client.lobh.BreakBytesIntoSendableSegments(assembledPacket, maxPacketSize - 12);
+                byte[][] split = client.lobh.BreakBytesIntoSendableSegments(assembledPacket, maxPacketSize - 24);
                 SendManyDatasToOneClient(client, PacketType.largeObjectPacket, client.sentDataRecords, split, repeats);
                 return;
             }
@@ -135,7 +142,11 @@ namespace ServerResources
             }
 
             byte[][] toResend = client.lobh.GetPartsOfRecentlySentPacket(id, partsToRecover);
-
+            
+            if (toResend == null)
+            {
+                return;
+            }
             foreach (byte[] resend in toResend)
             {
                 SendDataToOneClient(client, PacketType.largeObjectPacket, resend, 2);
@@ -165,6 +176,10 @@ namespace ServerResources
         public DateTime lastRecievedMessage;
 
         public ClientInformationGrantingCooldowns cooldowns = new ClientInformationGrantingCooldowns();
+
+        public PlayerPokemon thisUsersPokemon; //the Pokemon gets assigned in the world state manager once a file is gotten from its saves (or immediately while it's not implemented yet :P)
+
+        public bool currentlyConnected = true;
 
         public void Update()
         {
