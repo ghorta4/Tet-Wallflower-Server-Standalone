@@ -55,6 +55,7 @@ namespace Guildleader
         public readonly string RegionalVariant = ""; //Used to mark variant names like "alolan rattata"
         public readonly string Species; //the mouse pokemon, happiness pokemon, etc
         public string IdentifyingName { get { return string.Concat(RegionalVariant, " ", DisplayName); } }
+        public string SpriteName = "Pokemon1_0000";
 
         public readonly int size; //size of the pokemon in world blocks. 1 = 1x1x1, 2 = 2x2x1, 3 = 3x3x1, 4 = 4x4x2
 
@@ -136,8 +137,7 @@ namespace Guildleader
 
                 command = command.ToLower();
 
-                int argInt = 0;
-                bool argumentIsInt = int.TryParse(argument, out argInt);
+                bool argumentIsInt = int.TryParse(argument, out int argInt);
 
                 switch(command)
                 {
@@ -169,6 +169,9 @@ namespace Guildleader
                         {
                             ErrorHandler.AddErrorToLog("Warning: Non-int passed to int-only parameter in " + filename + ". Line: " + currentLine);
                         }
+                        break;
+                    case "img":
+                        SpriteName = argument;
                         break;
                     default:
                         ErrorHandler.AddErrorToLog("Warning: Unrecognized command "+ command + "! File: " + filename + ". Line: " + currentLine);

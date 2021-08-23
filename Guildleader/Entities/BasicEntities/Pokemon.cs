@@ -9,18 +9,17 @@ namespace Guildleader.Entities.BasicEntities
         //for Pokemon, they have an 'HP' that acts as a buffer for their health. Basically... Drop to 0 HP and you faint, drop to 0 health and you die.
         public int CurrentHealth = 10, maxHealth = 10;
 
+        public string PokemonProfileID; //by internal ID
+        PokemonProfile Profile { get { return PokemonLibrary.PokemonByInternalID[PokemonProfileID]; } }
+
         public override string GetSpriteName()
         {
-            throw new NotImplementedException();
+            return PokemonLibrary.PokemonByInternalID[PokemonProfileID].SpriteName;
         }
 
         public override byte[] ConvertToBytesForDataStorage()
         {
             return base.ConvertToBytesForDataStorage();
-        }
-        public override byte[] ConvertToBytesForClient()
-        {
-            return base.ConvertToBytesForClient();
         }
 
         public override void ReadEntityFromBytesServer(List<byte> data)

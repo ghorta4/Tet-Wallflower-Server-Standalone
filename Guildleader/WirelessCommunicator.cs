@@ -28,7 +28,10 @@ namespace Guildleader
             credentials, //IE logging in information, when that becomes relevant
             gameStateDataNotOrdered, //Anonymous placeholder - IE entities, chunks, etc.
             gameStateData, //Anonymous placeholder - IE recieving a previous packet would be really bad!
-            chunkInfo
+            chunkInfo,
+            nearbyEntityInfo,
+            entityIDToTrack, //helps clients adjust their cameras the right way
+            requestIDToTrack //clients requesting the above function; asking for an entity to track
         }
 
         public const int defaultPort = 44500;
@@ -140,7 +143,7 @@ namespace Guildleader
         {
             try
             {
-                UDPNode.Send(packet, packet.Length, target);
+                UDPNode.SendAsync(packet, packet.Length, target);
             }
             catch (Exception e)
             {
@@ -240,7 +243,7 @@ namespace Guildleader
             segments.Insert(0, packetIdentifyingInformation.ToArray());
 
             byte[][] array = segments.ToArray();
-            recentlySegmentedPacket[lastSentPacket] = new SentPacket(array);
+            recentlySegmentedPacket.Add(lastSentPacket, new SentPacket(array));
 
             lastSentPacket++;
             if (lastSentPacket > short.MaxValue - 10)

@@ -48,6 +48,7 @@ namespace ServerResources
                 if (ci.address.ToString() == address.ToString() && ci.port == port)
                 {
                     target = ci;
+                    ci.lastRecievedMessage = DateTime.Now;
                     if (!ci.currentlyConnected)
                     {
                         ci.currentlyConnected = true;
@@ -76,7 +77,6 @@ namespace ServerResources
         public void ProcessLatestPacket()
         {
             ClientDataPacket dp = packets.Dequeue() as ClientDataPacket;
-            dp.relevantClient.lastRecievedMessage = DateTime.Now;
             switch (dp.stowedPacketType)
             {
                 case PacketType.heartbeatPing:
@@ -86,6 +86,9 @@ namespace ServerResources
                     break;
                 case PacketType.largePacketRepairRequest:
                     RespondToLargePacketRepairRequest(dp.relevantClient, dp.contents);
+                    break;
+                case PacketType.requestIDToTrack:
+                    RespondToTrackingTargetRequest(dp.relevantClient);
                     break;
                 default:
                     ErrorHandler.AddErrorToLog(new Exception("Unhandled packet type: " + dp.stowedPacketType));
@@ -151,6 +154,16 @@ namespace ServerResources
             {
                 SendDataToOneClient(client, PacketType.largeObjectPacket, resend, 2);
             }
+        }
+
+        public void RespondToTrackingTargetRequest(ClientInfo client)
+        {
+            if (client.thisUsersPokemon == null)
+            {
+                return;
+            }
+            byte[] target = Guildleader.Convert.ToByte(client.thisUsersPokemon.EntityID);
+            SendDataToOneClient(client, PacketType.entityIDToTrack, target, 1);
         }
     }
 

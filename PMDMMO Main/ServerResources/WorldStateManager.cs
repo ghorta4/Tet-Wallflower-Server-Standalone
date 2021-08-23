@@ -41,7 +41,8 @@ namespace ServerResources
                 }
 
                 ci.thisUsersPokemon = new PlayerPokemon();
-                ci.thisUsersPokemon.Initialize();
+                ci.thisUsersPokemon.PokemonProfileID = "19";
+                ci.thisUsersPokemon.Initialize(Int3.Zero);
             }
         }
     }

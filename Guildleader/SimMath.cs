@@ -131,7 +131,6 @@ namespace Guildleader
             float xMod = seed * (x << 4 ^ x ^ (y << 5)) % 0.1f, yMod = seed * (y >> 8 ^ y ^ (x << 5)) % 0.412f;
             return (float)Math.Sin(x * xMod * 600 + y * yMod * 50 + 25 * seed + x * y * xMod * yMod);
         }
-        static int lastInt;
         public static float texturePositionFloat(int x, int y, int z, int seed)
         {
             float f = (float)Math.Sin(5.006f * x + 4963.1f * y + z * seed / 1000f);

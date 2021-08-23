@@ -45,8 +45,6 @@ namespace PMDMMO_Main
                 MainFunctions.Update();
                 Server.Update();
                 WorldStateManager.Update();
-                GameStateCommunications.ShareServerStateThread();
-                ErrorHandler.AddMessageToLog("main update.");
                 if (MainFunctions.endProgramRequested)
                 {
                     requestApplicationClosed = true;

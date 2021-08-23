@@ -7,12 +7,16 @@ namespace Guildleader.Entities
 {
     public class Entity
     {
+        public int EntityID = -1;
+
         public Int3 worldPositon;
 
         public Int3 currentChunk;
 
+        static int lastAssignedID;
         public Entity() {
-
+            EntityID = lastAssignedID;
+            lastAssignedID++;
         }
 
         public short buildVersion; //override this every time the method of serialization changes
@@ -22,7 +26,8 @@ namespace Guildleader.Entities
             Invalid,
             DefaultEntity,
             Actor,
-            Pokemon
+            Pokemon,
+            PlayerPokemon
         }
 
         public static Dictionary<EntityKey, Type> EntityDictionary = new Dictionary<EntityKey, Type>
@@ -30,6 +35,7 @@ namespace Guildleader.Entities
             {EntityKey.DefaultEntity, typeof(Entity) },
             {EntityKey.Actor, typeof(Actors) },
             {EntityKey.Pokemon, typeof(Pokemon) },
+            {EntityKey.PlayerPokemon, typeof(PlayerPokemon) },
         };
         public static Dictionary<Type, EntityKey> ReverseEntityDictionary;
 
@@ -51,18 +57,19 @@ namespace Guildleader.Entities
         {
             return GenerateBytesBase();
         }
-        public virtual byte[] ConvertToBytesForClient()
+        public virtual byte[] ConvertToBytesForClient(Entity observer) //do not show entities by default. requires an override to do so. Null values are never shared to the client, and are hence hidden. IE for invisible objects. Observer is passed in the case that, say, someone has invisi-sight or something.
         {
-            return GenerateBytesBase();
+            return null;
         }
 
-        byte[] GenerateBytesBase()
+        public byte[] GenerateBytesBase()
         {
             List<byte> data = new List<byte>();
 
             Type thisType = GetType();
             data.AddRange(Convert.ToByte((int)ReverseEntityDictionary[thisType]));
             data.AddRange(Convert.ToByte(buildVersion));
+            data.AddRange(Convert.ToByte(EntityID));
 
             data.AddRange(Convert.ToByte(worldPositon.x));
             data.AddRange(Convert.ToByte(worldPositon.y));
@@ -97,10 +104,11 @@ namespace Guildleader.Entities
 
             data.RemoveRange(0, sizeof(short));
 
-
+            int entityID = Convert.ExtractInts(data, 1)[0];
 
             Entity newEnt = Activator.CreateInstance(EntityDictionary[typeKey]) as Entity;
             newEnt.buildVersion = versionNumber;
+            newEnt.EntityID = entityID;
             if (useClientGeneration)
             {
                 newEnt.ReadEntityFromBytesClient(data);
@@ -114,14 +122,21 @@ namespace Guildleader.Entities
 
         void EntityGenerationBase(List<byte> data)
         {
-            const int numberofInts = 3;
-            int[] extractedPos = new int[numberofInts];
-            for (int i = 0; i < numberofInts; i++)
-            {
-                extractedPos[i] = Convert.ToInt(data.ToArray(), i * sizeof(int));
-            }
-            data.RemoveRange(0, numberofInts * sizeof(int));
+            int[] extractedPos = Convert.ExtractInts(data, 3);
             worldPositon = new Int3(extractedPos[0], extractedPos[1], extractedPos[2]);
+        }
+
+        public virtual void UpdateEntityUsingHarvestedData(Entity harvestedData)
+        {
+            worldPositon = harvestedData.worldPositon;
+        }
+        //and now, functions for our entities
+        public void Initialize(Int3 startingPosition)
+        {
+            worldPositon = startingPosition;
+            currentChunk = GetChunkPosition();
+            Chunk chunkImIn = WorldManager.currentWorld.GetChunk(currentChunk);
+            chunkImIn.containedEntities.Add(this);
         }
     }
 }

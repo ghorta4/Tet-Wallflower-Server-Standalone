@@ -11,22 +11,22 @@ namespace Guildleader.Entities.BasicEntities
         public int Durability;
 
         public abstract string GetSpriteName();
-        string stringRetrievedFromServer;
+        public string stringRetrievedFromServer;
 
         public override byte[] ConvertToBytesForDataStorage()
         {
             return PhysicalObjectConversions();
         }
-        public override byte[] ConvertToBytesForClient()
+        public override byte[] ConvertToBytesForClient(Entity observer)
         {
-            List<byte> temp = new List<byte> (PhysicalObjectConversions());
+            List<byte> temp = new List<byte> (GenerateBytesBase());
             temp.AddRange(Convert.ToByte(GetSpriteName()));
             return temp.ToArray();
         }
 
         byte[] PhysicalObjectConversions()
         {
-            List<byte> holster = new List<byte>(base.ConvertToBytesForDataStorage());
+            List<byte> holster = new List<byte>(GenerateBytesBase());
             holster.AddRange(Convert.ToByte(Durability));
             return holster.ToArray();
         }
@@ -34,7 +34,8 @@ namespace Guildleader.Entities.BasicEntities
         public override void ReadEntityFromBytesClient(List<byte> data)
         {
             base.ReadEntityFromBytesClient(data);
-            ProcessPhysicalObjectData(data);
+            string retrievedSpriteName = Convert.ExtractStrings(data, 1)[0];
+            stringRetrievedFromServer = retrievedSpriteName;
         }
         public override void ReadEntityFromBytesServer(List<byte> data)
         {

@@ -40,8 +40,12 @@ namespace Guildleader
                 }
             }
         }
-    
-        public Chunk GetChunkData(int xPos, int yPos, int zPos)
+        
+        public Chunk GetChunk(Int3 position)
+        {
+            return GetChunk(position.x, position.y, position.z);
+        }
+        public Chunk GetChunk(int xPos, int yPos, int zPos)
         {
             InitializeChunkInfoPath();
             string fileName = GetNameBasedOnPosition(xPos, yPos, zPos);
@@ -93,7 +97,7 @@ namespace Guildleader
                 {
                     for (int z = zPos - zSearch; z <= zPos + zSearch; z++)
                     {
-                        inArea.Add(GetChunkData(x,y,z));
+                        inArea.Add(GetChunk(x,y,z));
                     }
                 }
             }
@@ -178,7 +182,7 @@ namespace Guildleader
                         }
                         if (!allChunks[x][y].ContainsKey(z))
                         {
-                            allChunks[x][y][z] = GetChunkData(x, y, z);
+                            allChunks[x][y][z] = GetChunk(x, y, z);
                         }
                     }
                 }
@@ -221,9 +225,8 @@ namespace Guildleader
             }
             Chunk chunkResult = null;
             Int3 chunkPos = GetChunkPositionBasedOnTilePosition(x, y, z);
-            Dictionary<int, Dictionary<int, Chunk>> holdera = null;
             Dictionary<int, Chunk> holderb = null;
-            bool success = allChunks.TryGetValue(chunkPos.x, out holdera);
+            bool success = allChunks.TryGetValue(chunkPos.x, out Dictionary<int, Dictionary<int, Chunk>> holdera);
             if (success)
             {
                 success = holdera.TryGetValue(chunkPos.y, out holderb);
