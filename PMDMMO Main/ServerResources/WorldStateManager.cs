@@ -35,7 +35,7 @@ namespace ServerResources
         {
             foreach (ClientInfo ci in Server.clients)
             {
-                if (ci.thisUsersPokemon != null)
+                if (ci == null || ci.thisUsersPokemon != null)
                 {
                     continue;
                 }
@@ -43,6 +43,7 @@ namespace ServerResources
                 ci.thisUsersPokemon = new PlayerPokemon();
                 ci.thisUsersPokemon.PokemonProfileID = "19";
                 ci.thisUsersPokemon.Initialize(Int3.Zero);
+                ci.thisUsersPokemon.RiseToSurface(10);
             }
         }
     }

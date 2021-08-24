@@ -34,6 +34,13 @@ namespace Guildleader.Entities.BasicEntities
 
     public class PlayerPokemon : Pokemon
     {
+        public void ProcessDebugCommand(byte[] command)
+        {
+            List<byte> holster = new List<byte>(command);
 
+            int[] values = Convert.ExtractInts(holster, 3);
+
+            GentleShove(new Int3(values[0], values[1], values[2]), 0);
+        }
     }
 }

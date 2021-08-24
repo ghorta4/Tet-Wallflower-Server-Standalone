@@ -73,8 +73,30 @@ namespace Guildleader
         {
             return new Int3(a.x/b, a.y/b, a.z/b);
         }
+        public static bool operator ==(Int3 a, Int3 b)
+        {
+            return a.x == b.x && a.y == b.y && a.z == b.z;
+        }
+        public static bool operator !=(Int3 a, Int3 b)
+        {
+            return a.x != b.x || a.y != b.y || a.z != b.z;
+        }
+        public override bool Equals(object obj)
+        {
+            Int3 converted = obj as Int3;
+            if (converted == null)
+            {
+                return false;
+            }
+            return converted == this;
+        }
 
         public double Magnitude { get { return Math.Sqrt(x*x + y*y + z*z); } }
+
+        public override string ToString()
+        {
+            return $"Int3({x},{y},{z})";
+        }
     }
 
     public static class RNG

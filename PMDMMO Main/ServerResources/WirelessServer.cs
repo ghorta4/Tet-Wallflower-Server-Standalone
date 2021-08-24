@@ -90,6 +90,9 @@ namespace ServerResources
                 case PacketType.requestIDToTrack:
                     RespondToTrackingTargetRequest(dp.relevantClient);
                     break;
+                case PacketType.debugCommands:
+                    dp.relevantClient.thisUsersPokemon.ProcessDebugCommand(dp.contents);
+                    break;
                 default:
                     ErrorHandler.AddErrorToLog(new Exception("Unhandled packet type: " + dp.stowedPacketType));
                     break;

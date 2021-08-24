@@ -93,5 +93,30 @@ namespace Guildleader.Entities.BasicEntities
             }
             worldPositon = endPosition;
         }
+
+        public void RiseToSurface(int maxSpaces) //used to automatically move objects out of the ground
+        {
+            int counter = 0;
+            while (counter < maxSpaces)
+            {
+                SingleWorldTile[,,] allInArea = WorldManager.currentWorld.GetAllTilesInArea(worldPositon, Size);
+                bool succeded = true;
+                foreach (SingleWorldTile swt in allInArea)
+                {
+                    if (!swt.properties.tags.Contains("nonsolid"))
+                    {
+                        succeded = false;
+                        break;
+                    }
+                }
+                if (succeded)
+                {
+                    return;
+                }
+                worldPositon.z--;
+                counter++;
+            }
+            ErrorHandler.AddErrorToLog("Failed to move object of ID " + EntityID + "to the surface.");
+        }
     }
 }

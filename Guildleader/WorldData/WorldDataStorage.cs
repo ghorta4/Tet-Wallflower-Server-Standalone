@@ -41,6 +41,11 @@ namespace Guildleader
             }
         }
         
+        public bool CheckIfChunkIsLoaded(Int3 position)
+        {
+            return allChunks.ContainsKey(position.x) && allChunks[position.x].ContainsKey(position.y) && allChunks[position.x][position.y].ContainsKey(position.z);
+        }
+
         public Chunk GetChunk(Int3 position)
         {
             return GetChunk(position.x, position.y, position.z);
@@ -102,6 +107,21 @@ namespace Guildleader
                 }
             }
             return inArea.ToArray();
+        }
+        public List<Chunk> GetAllChunksLoaded()
+        {
+            List<Chunk> holster = new List<Chunk>();
+            foreach (var kvpxy in allChunks)
+            {
+                foreach (var kvpyz in kvpxy.Value)
+                {
+                    foreach (Chunk c in kvpyz.Value.Values )
+                    {
+                        holster.Add(c);
+                    }
+                }
+            }
+            return holster;
         }
         public void SaveChunkData(Int3 pos, Chunk chu)
         {

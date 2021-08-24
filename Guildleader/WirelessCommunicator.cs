@@ -31,7 +31,8 @@ namespace Guildleader
             chunkInfo,
             nearbyEntityInfo,
             entityIDToTrack, //helps clients adjust their cameras the right way
-            requestIDToTrack //clients requesting the above function; asking for an entity to track
+            requestIDToTrack, //clients requesting the above function; asking for an entity to track
+            debugCommands, //temp uses
         }
 
         public const int defaultPort = 44500;
@@ -195,7 +196,7 @@ namespace Guildleader
             bool NeedToBeInOrder = !PacketsAllowedOutOfOrder.Contains(dp.stowedPacketType);
             if (NeedToBeInOrder && !packetDictionary.ContainsKey(dp.stowedPacketType))
             {
-                packetDictionary.Add(dp.stowedPacketType, packetNumber - 1);
+                packetDictionary.Add(dp.stowedPacketType, int.MinValue);
             }
             if (NeedToBeInOrder && packetDictionary[dp.stowedPacketType] >= packetNumber)
             {
