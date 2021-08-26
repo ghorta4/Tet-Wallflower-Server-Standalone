@@ -113,7 +113,7 @@ namespace Guildleader.Entities.BasicEntities
                 {
                     return;
                 }
-                worldPositon.z--;
+                worldPositon.z++;
                 counter++;
             }
             ErrorHandler.AddErrorToLog("Failed to move object of ID " + EntityID + "to the surface.");

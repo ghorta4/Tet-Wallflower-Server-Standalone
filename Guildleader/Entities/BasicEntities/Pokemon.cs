@@ -36,6 +36,7 @@ namespace Guildleader.Entities.BasicEntities
     {
         public void ProcessDebugCommand(byte[] command)
         {
+            ErrorHandler.AddMessageToLog("command GET");
             List<byte> holster = new List<byte>(command);
 
             int[] values = Convert.ExtractInts(holster, 3);

@@ -68,8 +68,10 @@ namespace ServerResources
             {
                 return;
             }
-            ClientDataPacket cdp = new ClientDataPacket(dp);
-            cdp.relevantClient = target;
+            ClientDataPacket cdp = new ClientDataPacket(dp)
+            {
+                relevantClient = target
+            };
 
             packets.Enqueue(cdp);
         }

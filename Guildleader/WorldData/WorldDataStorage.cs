@@ -115,7 +115,7 @@ namespace Guildleader
             {
                 foreach (var kvpyz in kvpxy.Value)
                 {
-                    foreach (Chunk c in kvpyz.Value.Values )
+                    foreach (Chunk c in kvpyz.Value.Values)
                     {
                         holster.Add(c);
                     }
@@ -231,15 +231,15 @@ namespace Guildleader
             int spaceWithinChunkx = x % Chunk.defaultx;
             int spaceWithinChunky = y % Chunk.defaulty;
             int spaceWithinChunkz = z % Chunk.defaultz;
-            if (spaceWithinChunkx < 0)
+            while (spaceWithinChunkx < 0)
             {
                 spaceWithinChunkx += Chunk.defaultx;
             }
-            if (spaceWithinChunky < 0)
+            while (spaceWithinChunky < 0)
             {
                 spaceWithinChunky += Chunk.defaulty;
             }
-            if (spaceWithinChunkz < 0)
+            while (spaceWithinChunkz < 0)
             {
                 spaceWithinChunkz += Chunk.defaultz;
             }
@@ -290,15 +290,6 @@ namespace Guildleader
             int chunkZ = (int)Math.Floor(z / (float)Chunk.defaultz);
             return new Int3(chunkX, chunkY, chunkZ);
         }
-
-        public Int3 GetLightAtPosition(Int3 position, Int3 directionFacing)
-        {
-            if (directionFacing.z > 0)
-            {
-                return new Int3(255, 255, 255);
-            }
-            return new Int3(200, 200, 200);
-        }
     }
 
     public class Chunk
@@ -307,7 +298,7 @@ namespace Guildleader
         public bool hasCompletedPostProcessingThatRequiresNeighbors;
         readonly int chunkVersion = 0;
 
-        public const int defaultx = 12, defaulty = 12, defaultz = 2;
+        public const int defaultx = 15, defaulty = 15, defaultz = 2;
         public SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
 
         public List<Entity> containedEntities = new List<Entity>();
@@ -319,7 +310,7 @@ namespace Guildleader
         public static Chunk SpawnNewChunk(int x, int y, int z, int gereationType)
         {
             Chunk temp = new Chunk(new Int3(x, y, z));
-            if (z == 0 && x < WorldDataStorageModuleGeneric.worldMaxx && x > WorldDataStorageModuleGeneric.worldMinx && y > WorldDataStorageModuleGeneric.worldMiny && y < WorldDataStorageModuleGeneric.worldMaxy)
+            if (x < WorldDataStorageModuleGeneric.worldMaxx && x > WorldDataStorageModuleGeneric.worldMinx && y > WorldDataStorageModuleGeneric.worldMiny && y < WorldDataStorageModuleGeneric.worldMaxy)
             {
                 temp.InitializeNormally(0);
             }
@@ -375,15 +366,9 @@ namespace Guildleader
                     {
                         Int3 tilePos = new Int3(chunkPos.x * defaultx + i, chunkPos.y * defaulty + j, chunkPos.z * defaultz + k);
                         short desiredID = 0;
-                        switch ((tilePos.x + tilePos.y + tilePos.z)%4)
+                        if (chunkPos.z < 0)
                         {
-                            case 0:
-                                desiredID = 1;
-                                break;
-                            case 1:
-                            case 2:
-                                desiredID = 0;
-                                break;
+                            desiredID = 1;
                         }
                         tiles[i, j, k] = new SingleWorldTile(desiredID, tilePos);
 
@@ -544,5 +529,15 @@ namespace Guildleader
             return holster.ToArray();
         }
 
+        //server function for running the game below
+
+        public void Update(float deltaTime, byte lastUpdatedFrameNumber) //frame number is to prevent an entity from updating twice if, say, it moves from one chunk to another
+        {
+            List<Entity> entitiesToUpdate = new List<Entity>(containedEntities);
+            foreach (Entity e in entitiesToUpdate)
+            {
+                e.Update(deltaTime, lastUpdatedFrameNumber);
+            }
+        }
     }
 }

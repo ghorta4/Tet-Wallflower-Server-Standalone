@@ -146,5 +146,14 @@ namespace ServerResources
 
             return true;
         }
+
+        public void UpdateAllChunks(float deltaTime, byte currentFrameNumber)
+        {
+            List<Chunk> allChunksToUpdate = GetAllChunksLoaded();
+            foreach (Chunk c in allChunksToUpdate)
+            {
+                c.Update(deltaTime, currentFrameNumber);
+            }
+        }
     }
 }

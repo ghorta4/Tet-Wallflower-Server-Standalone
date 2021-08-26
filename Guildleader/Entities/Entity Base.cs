@@ -14,6 +14,8 @@ namespace Guildleader.Entities
         public Int3 currentChunk;
 
         static int lastAssignedID;
+
+        Chunk chunkImIn;
         public Entity() {
             EntityID = lastAssignedID;
             lastAssignedID++;
@@ -135,8 +137,32 @@ namespace Guildleader.Entities
         {
             worldPositon = startingPosition;
             currentChunk = GetChunkPosition();
-            Chunk chunkImIn = WorldManager.currentWorld.GetChunk(currentChunk);
+            chunkImIn = WorldManager.currentWorld.GetChunk(currentChunk);
             chunkImIn.containedEntities.Add(this);
+        }
+
+        byte currentFrameNumber = 255;
+        public virtual void Update(float deltaTime, byte lastUpdatedFrameNumber)
+        {
+            if (currentFrameNumber == lastUpdatedFrameNumber)
+            {
+                return;
+            }
+            currentFrameNumber = lastUpdatedFrameNumber;
+            HandleChunkAssignment();
+        }
+
+        void HandleChunkAssignment()
+        {
+            Int3 newChunkPos = GetChunkPosition();
+            if (newChunkPos != currentChunk)
+            {
+                currentChunk = newChunkPos;
+                chunkImIn.containedEntities.Remove(this);
+                chunkImIn = WorldManager.currentWorld.GetChunk(currentChunk);
+                chunkImIn.containedEntities.Add(this);
+                WorldManager.currentWorld.LoadNearbyChunkData(currentChunk,1);
+            }
         }
     }
 }

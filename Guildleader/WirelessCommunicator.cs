@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Linq;
 using System.Threading;
 using System.Net.NetworkInformation;
+using System.Collections.Concurrent;
 
 namespace Guildleader
 {
@@ -214,7 +215,7 @@ namespace Guildleader
 
         public Dictionary<string, PacketAssembler> recievedSegments = new Dictionary<string, PacketAssembler> { };
 
-        public Dictionary<short, SentPacket> recentlySegmentedPacket = new Dictionary<short, SentPacket> { };
+        public ConcurrentDictionary<short, SentPacket> recentlySegmentedPacket = new ConcurrentDictionary<short, SentPacket> { };
         short lastSentPacket; //packet identifier
         public byte[][] BreakBytesIntoSendableSegments(byte[] longValue, short breakSize)
         {
@@ -244,7 +245,7 @@ namespace Guildleader
             segments.Insert(0, packetIdentifyingInformation.ToArray());
 
             byte[][] array = segments.ToArray();
-            recentlySegmentedPacket.Add(lastSentPacket, new SentPacket(array));
+            bool success = recentlySegmentedPacket.TryAdd(lastSentPacket, new SentPacket(array));
 
             lastSentPacket++;
             if (lastSentPacket > short.MaxValue - 10)
@@ -329,7 +330,7 @@ namespace Guildleader
                 SentPacket sp = recentlySegmentedPacket[s];
                 if ((now - sp.sent).TotalSeconds >= maxAgeOfPacketsInSeconds)
                 {
-                    recentlySegmentedPacket.Remove(s);
+                    recentlySegmentedPacket.TryRemove(s, out SentPacket sent);
                 }
             }
         }

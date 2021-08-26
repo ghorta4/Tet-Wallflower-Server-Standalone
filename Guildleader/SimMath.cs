@@ -97,6 +97,11 @@ namespace Guildleader
         {
             return $"Int3({x},{y},{z})";
         }
+
+        public override int GetHashCode()
+        {
+            return x ^ (y << 6) ^ (z << 11);
+        }
     }
 
     public static class RNG
