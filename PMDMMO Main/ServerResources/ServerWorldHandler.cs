@@ -155,5 +155,23 @@ namespace ServerResources
                 c.Update(deltaTime, currentFrameNumber);
             }
         }
+
+        public override Chunk GetChunkNotYetLoaded(int xPos, int yPos, int zPos)
+        {
+            string fileName = GetNameBasedOnPosition(xPos, yPos, zPos);
+            string chunkPath = FileAccess.ChunkStorageName + fileName;
+            Chunk chu = null;
+            if (!FileAccess.FileExists(chunkPath))
+            {
+                chu = Chunk.SpawnNewChunk(xPos, yPos, zPos, 0);
+            }
+            else
+            {
+                byte[] chunkData = FileAccess.LoadFile(chunkPath);
+                chu = Chunk.GetChunkFromBytes(chunkData, new Int3(xPos, yPos, zPos));
+            }
+
+            return chu;
+        }
     }
 }

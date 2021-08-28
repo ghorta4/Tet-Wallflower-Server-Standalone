@@ -34,7 +34,7 @@ namespace ServerResources
                 lastAssistedClient %= Application.Server.clients.Count;
                 ClientInfo ci = Application.Server.clients[lastAssistedClient];
 
-                if ((DateTime.Now - ci.cooldowns.lastChunkUpdateGiven).TotalMilliseconds < 334)
+                if ((DateTime.Now - ci.cooldowns.lastChunkUpdateGiven).TotalMilliseconds < 150)
                 {
                     Thread.Sleep(50);
                     continue;
@@ -53,10 +53,21 @@ namespace ServerResources
                 Chunk[] testChunks = WorldManager.currentWorld.GetChunksInArea(chunkPos.x, chunkPos.y, chunkPos.z, 1, 1, 1);
                 //also stores all nearby entities so the client knows the only entities it needs to render
                 List<Entity> allNearbyEntities = new List<Entity>();
+
+                //first determine if chunks themselves need to be sent through a few parameters (to save on bandwidth)
+                bool mustSendAllChunks = false;
+                if (poke.needsChunksResent)
+                {
+                    poke.needsChunksResent = false;
+                    mustSendAllChunks = true;
+                }
                 foreach (Chunk c in testChunks)
                 {
-                    byte[] data = c.ConvertChunkToBytesWithPositionInFrontUsingSimples(c.chunkPos);
-                    Application.Server.SendDataToOneClient(ci, WirelessCommunicator.PacketType.chunkInfo, data, 1);
+                    if (mustSendAllChunks)
+                    {
+                        byte[] data = c.ConvertChunkToBytesWithPositionInFrontUsingSimples(c.chunkPos);
+                        Application.Server.SendDataToOneClient(ci, WirelessCommunicator.PacketType.chunkInfo, data, 1);
+                    }
                     allNearbyEntities.AddRange(c.containedEntities);
                 }
                 List<byte> serializedEntities = new List<byte>();

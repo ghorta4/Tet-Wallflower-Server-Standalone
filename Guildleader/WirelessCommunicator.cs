@@ -125,8 +125,10 @@ namespace Guildleader
 
         public byte[] GenerateProperDataPacket(byte[] information, PacketType dataType, Dictionary<PacketType, int> lastSentMessageIDRecords)
         {
-            List<byte> holster = new List<byte>();
-            holster.Add((byte)dataType);
+            List<byte> holster = new List<byte>
+            {
+                (byte)dataType
+            };
             if (!lastSentMessageIDRecords.ContainsKey(dataType))
             {
                 lastSentMessageIDRecords.Add(dataType, int.MinValue);
@@ -164,7 +166,8 @@ namespace Guildleader
         static WirelessCommunicator.PacketType[] PacketsAllowedOutOfOrder = new WirelessCommunicator.PacketType[] {
             WirelessCommunicator.PacketType.largeObjectPacket,
         WirelessCommunicator.PacketType.gameStateDataNotOrdered,
-        WirelessCommunicator.PacketType.chunkInfo
+        WirelessCommunicator.PacketType.chunkInfo,
+        WirelessCommunicator.PacketType.debugCommands
         };
 
         public byte[] contents;
@@ -185,9 +188,11 @@ namespace Guildleader
             {
                 return null;
             }
-            DataPacket dp = new DataPacket();
-            dp.address = addressGiven;
-            dp.port = portGiven;
+            DataPacket dp = new DataPacket
+            {
+                address = addressGiven,
+                port = portGiven
+            };
             int packetNumber = Convert.ToInt(packetBytes, 1);
             dp.stowedPacketType = (WirelessCommunicator.PacketType)packetBytes[0];
             if (!Enum.IsDefined(typeof(WirelessCommunicator.PacketType), dp.stowedPacketType))

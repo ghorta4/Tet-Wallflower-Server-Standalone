@@ -73,6 +73,7 @@ namespace Guildleader.Entities.BasicEntities
                             SingleWorldTile swt = occupiedArea[x, y, z];
                             if (!swt.properties.tags.Contains("nonsolid"))
                             {
+                                ErrorHandler.AddMessageToLog("Player blocked by id " + swt.tileID + "at location " + new Int3(targetPos.x + x,targetPos.y + y,targetPos.z + z));
                                 goto blockBreak;
                             }
                         }

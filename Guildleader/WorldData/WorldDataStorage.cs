@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Guildleader.Entities;
+using Guildleader.Entities.BasicEntities;
 
 namespace Guildleader
 {
@@ -18,14 +19,21 @@ namespace Guildleader
     {
         public int seed;
 
-       // public static Dictionary<uint, Entity> allEntities = new Dictionary<uint, Entity> { };
-
         public Dictionary<int, Dictionary<int, Dictionary<int, Chunk>>> allChunks = new Dictionary<int, Dictionary<int, Dictionary<int, Chunk>>> { };
-        public static int worldMinx = -500, worldMaxx = 500, worldMiny = -500, worldMaxy = 500, worldMinz = -100, worldMaxz = 50;
-        public const int worldStartSizeX = 2, worldStartSizeY = 2, worldStartSizeZ = 1;
+        public static int worldMinx = -5, worldMaxx = 5, worldMiny = -5, worldMaxy = 5, worldMinz = -1, worldMaxz = 5;
+        public const int worldStartSizeX = 0, worldStartSizeY = 0, worldStartSizeZ = 1;
 
         public const float worldTileSize = 0.1f;
 
+        public WorldDataStorageModuleGeneric()
+        {
+            Initialize();
+        }
+
+        public virtual void Initialize()
+        {
+            InitializeChunkInfoPath();
+        }
 
         public void SaveAllChunks()
         {
@@ -52,9 +60,6 @@ namespace Guildleader
         }
         public Chunk GetChunk(int xPos, int yPos, int zPos)
         {
-            InitializeChunkInfoPath();
-            string fileName = GetNameBasedOnPosition(xPos, yPos, zPos);
-            string chunkPath = FileAccess.ChunkStorageName + fileName;
             Chunk chu = null;
 
             bool hasXpos = allChunks.ContainsKey(xPos);
@@ -65,15 +70,7 @@ namespace Guildleader
                 return allChunks[xPos][yPos][zPos];
             }
 
-            if (!FileAccess.FileExists(chunkPath))
-            {
-                chu = Chunk.SpawnNewChunk(xPos, yPos, zPos, 0);
-            }
-            else
-            {
-                byte[] chunkData = FileAccess.LoadFile(chunkPath);
-                chu = Chunk.GetChunkFromBytes(chunkData, new Int3(xPos, yPos, zPos));
-            }
+            chu = GetChunkNotYetLoaded(xPos, yPos, zPos);
             if (!hasXpos)
             {
                 allChunks[xPos] = new Dictionary<int, Dictionary<int, Chunk>>();
@@ -133,56 +130,9 @@ namespace Guildleader
             string fileName = GetNameBasedOnPosition(xPos, yPos, zPos);
             FileAccess.WriteBytesInsideCurrentDefaultDirectoryInSubfolder(chu.ConvertChunkToBytes(), fileName, FileAccess.ChunkStorageName);
         }
-        public void UnloadDistantChunkData(Int3 chunkPos, int cutoffRange)
-        {
-            List<Int3> chunksToRemove = new List<Int3>();
-            foreach (var xdic in allChunks)
-            {
-                foreach (var ydic in xdic.Value)
-                {
-                    foreach (var zdic in ydic.Value)
-                    {
-                        int dist = Math.Min(Math.Min(Math.Abs(chunkPos.x - xdic.Key), Math.Abs(chunkPos.y - ydic.Key)), Math.Abs(chunkPos.z - zdic.Key) - 1);
-                        if (dist > cutoffRange)
-                        {
-                            chunksToRemove.Add(new Int3(xdic.Key, ydic.Key, zdic.Key));
-                        }
-                    }
-                }
-            }
 
-            foreach (Int3 toRemove in chunksToRemove)
-            {
-                SaveChunkData(toRemove, allChunks[toRemove.x][toRemove.y][toRemove.z]);
-                allChunks[toRemove.x][toRemove.y].Remove(toRemove.z);
-            }
+        public abstract Chunk GetChunkNotYetLoaded(int x, int y, int z);
 
-            List<int> subDictsToRemovea = new List<int>();
-            List<int> subDictsToRemoveb = new List<int>();
-            foreach (var xdic in allChunks)
-            {
-                foreach (var ydic in xdic.Value)
-                {
-                    if (ydic.Value.Count == 0)
-                    {
-                        subDictsToRemovea.Add(ydic.Key);
-                    }
-                }
-                foreach (int key in subDictsToRemovea)
-                {
-                    xdic.Value.Remove(key);
-                }
-                subDictsToRemovea.Clear();
-                if (xdic.Value.Count == 0)
-                {
-                    subDictsToRemoveb.Add(xdic.Key);
-                }
-            }
-            foreach (int key in subDictsToRemoveb)
-            {
-                allChunks.Remove(key);
-            }
-        }
         public void LoadNearbyChunkData(Int3 chunkPos, int loadDistance)
         {
             for (int x = chunkPos.x - loadDistance; x <= chunkPos.x + loadDistance; x++)
@@ -207,13 +157,14 @@ namespace Guildleader
                     }
                 }
             }
+            NotifyAllNearbyPlayersOfUpdate(chunkPos, 1);
         }
 
         public static Int3 ChunkCenterPosition(Int3 chunkID)
         {
             return new Int3(chunkID.x * Chunk.defaultx, chunkID.y * Chunk.defaulty, chunkID.z * Chunk.defaultz);
         }
-        static string GetNameBasedOnPosition(int xPos, int yPos, int zPos)
+        public static string GetNameBasedOnPosition(int xPos, int yPos, int zPos)
         {
             return xPos + "v" + yPos + "v" + zPos;
         }
@@ -243,29 +194,29 @@ namespace Guildleader
             {
                 spaceWithinChunkz += Chunk.defaultz;
             }
-            Chunk chunkResult = null;
-            Int3 chunkPos = GetChunkPositionBasedOnTilePosition(x, y, z);
-            Dictionary<int, Chunk> holderb = null;
-            bool success = allChunks.TryGetValue(chunkPos.x, out Dictionary<int, Dictionary<int, Chunk>> holdera);
-            if (success)
-            {
-                success = holdera.TryGetValue(chunkPos.y, out holderb);
-            }
-            if (success)
-            {
-                success = holderb.TryGetValue(chunkPos.z, out chunkResult);
-            }
-            if (!success)
-            {
-                SingleWorldTile temp = new SingleWorldTile(5, new Int3(x, y, z));
-                return temp;
-            }
-            if (!chunkResult.hasCompletedPostProcessingThatRequiresNeighbors)
-            {
-                SingleWorldTile temp = new SingleWorldTile(5, new Int3(x, y, z));
-                return temp;
-            }
-            return chunkResult.tiles[spaceWithinChunkx, spaceWithinChunky, spaceWithinChunkz];
+            Chunk chunkResult = GetChunk(GetChunkPositionBasedOnTilePosition(x, y, z));
+            //Int3 chunkPos = GetChunkPositionBasedOnTilePosition(x, y, z);
+            //Dictionary<int, Chunk> holderb = null;
+            //bool success = allChunks.TryGetValue(chunkPos.x, out Dictionary<int, Dictionary<int, Chunk>> holdera);
+            //if (success)
+            //{
+            //    success = holdera.TryGetValue(chunkPos.y, out holderb);
+            //}
+            //if (success)
+            //{
+            //    success = holderb.TryGetValue(chunkPos.z, out chunkResult);
+            //}
+            //if (!success)
+            //{
+            //    SingleWorldTile temp = new SingleWorldTile(5, new Int3(x, y, z));
+            //    return temp;
+            //}
+            //if (!chunkResult.hasCompletedPostProcessingThatRequiresNeighbors)
+            //{
+            //    SingleWorldTile temp = new SingleWorldTile(5, new Int3(x, y, z));
+            //    return temp;
+            //}
+            return chunkResult.GetTile(spaceWithinChunkx, spaceWithinChunky, spaceWithinChunkz);
         }
         public SingleWorldTile[,,] GetAllTilesInArea(Int3 corner, Int3 size)
         {
@@ -290,6 +241,25 @@ namespace Guildleader
             int chunkZ = (int)Math.Floor(z / (float)Chunk.defaultz);
             return new Int3(chunkX, chunkY, chunkZ);
         }
+
+        //below function marks all players within a range of chunks with a bool that lets them recieve an update. Do this every time a tile is updated
+        public void NotifyAllNearbyPlayersOfUpdate(Int3 center, int range)
+        {
+            Chunk[] toTarget = GetChunksInArea(center.x, center.y, center.z, range, range, range);
+            List<Entity> allNearbyEntities = new List<Entity>();
+            foreach (Chunk c in toTarget)
+            {
+                allNearbyEntities.AddRange(c.containedEntities);
+            }
+            foreach (Entity e in allNearbyEntities)
+            {
+                PlayerPokemon asPlayer = e as PlayerPokemon;
+                if (asPlayer != null)
+                {
+                    asPlayer.needsChunksResent = true;
+                }
+            }
+        }
     }
 
     public class Chunk
@@ -299,7 +269,7 @@ namespace Guildleader
         readonly int chunkVersion = 0;
 
         public const int defaultx = 15, defaulty = 15, defaultz = 2;
-        public SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
+        SingleWorldTile[,,] tiles = new SingleWorldTile[defaultx, defaulty, defaultz];
 
         public List<Entity> containedEntities = new List<Entity>();
 
@@ -334,6 +304,19 @@ namespace Guildleader
                 }
             }
         }
+        public void InitializeNotLoaded()
+        {
+            for (int i = 0; i < tiles.GetLength(0); i++)
+            {
+                for (int j = 0; j < tiles.GetLength(1); j++)
+                {
+                    for (int k = 0; k < tiles.GetLength(2); k++)
+                    {
+                        tiles[i, j, k] = new SingleWorldTile(5, new Int3(i,j,k));
+                    }
+                }
+            }
+        }
         public void InitializeNoise()
         {
             for (int i = 0; i < tiles.GetLength(0); i++)
@@ -358,6 +341,7 @@ namespace Guildleader
         }
         public void InitializeNormally(int generationType)
         {
+            short testChunkTileType = (short)((chunkPos.x + chunkPos.y) % 2 == 0 ? 4 : 1);
             for (int i = 0; i < tiles.GetLength(0); i++)
             {
                 for (int j = 0; j < tiles.GetLength(1); j++)
@@ -368,7 +352,7 @@ namespace Guildleader
                         short desiredID = 0;
                         if (chunkPos.z < 0)
                         {
-                            desiredID = 1;
+                            desiredID = testChunkTileType;
                         }
                         tiles[i, j, k] = new SingleWorldTile(desiredID, tilePos);
 
@@ -384,11 +368,25 @@ namespace Guildleader
             hasCompletedPostProcessingThatRequiresNeighbors = true;
         }
 
+        public SingleWorldTile GetTile(Int3 relativePos)
+        {
+            return GetTile(relativePos.x, relativePos.y, relativePos.z);
+        }
+        public SingleWorldTile GetTile(int x, int y, int z)
+        {
+            return tiles[x, y, z];
+        }
+
+        public SingleWorldTile[,,] GetAllTiles()
+        {
+            return tiles;
+        }
+
         SingleWorldTile GetQuickTile(Int3 worldPos)
         {
             int localx = worldPos.x - chunkPos.x * defaultx;
             int localy = worldPos.y - chunkPos.y * defaulty;
-            int localz = worldPos.z;
+            int localz = worldPos.z - chunkPos.z * defaultz;
 
             if (localx < 0 || localy < 0 || localz < 0 || localx >= defaultx || localy >= defaulty || localz >= defaultz)
             {

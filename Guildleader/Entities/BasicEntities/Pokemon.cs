@@ -34,14 +34,19 @@ namespace Guildleader.Entities.BasicEntities
 
     public class PlayerPokemon : Pokemon
     {
+        public bool needsChunksResent = true;
         public void ProcessDebugCommand(byte[] command)
         {
-            ErrorHandler.AddMessageToLog("command GET");
             List<byte> holster = new List<byte>(command);
 
             int[] values = Convert.ExtractInts(holster, 3);
 
             GentleShove(new Int3(values[0], values[1], values[2]), 0);
+        }
+
+        public override void ActionsOnChunkChange()
+        {
+            needsChunksResent = true;
         }
     }
 }

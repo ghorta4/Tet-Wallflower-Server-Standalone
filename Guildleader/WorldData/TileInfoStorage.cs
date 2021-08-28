@@ -113,5 +113,10 @@ namespace Guildleader
                 this.tags.Add(t);
             }
         }
+
+        public override int GetHashCode()
+        {
+            return id;
+        }
     }
 }

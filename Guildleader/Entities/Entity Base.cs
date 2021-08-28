@@ -161,8 +161,11 @@ namespace Guildleader.Entities
                 chunkImIn.containedEntities.Remove(this);
                 chunkImIn = WorldManager.currentWorld.GetChunk(currentChunk);
                 chunkImIn.containedEntities.Add(this);
-                WorldManager.currentWorld.LoadNearbyChunkData(currentChunk,1);
+             //   WorldManager.currentWorld.LoadNearbyChunkData(currentChunk,2);
+                ActionsOnChunkChange();
             }
         }
+
+        public virtual void ActionsOnChunkChange() { }
     }
 }

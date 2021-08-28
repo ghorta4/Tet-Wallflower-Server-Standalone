@@ -39,12 +39,8 @@ namespace ServerResources
             float timeElapsed = (float)GameTimer.Elapsed.TotalSeconds;
             timeElapsed = Math.Min(timeElapsed, 0.3f);
             GameTimer.Restart();
-            List<Chunk> toUpdate = World.GetAllChunksLoaded();
             currentFrameNumber++;
-            foreach (Chunk c in toUpdate)
-            {
-                c.Update(timeElapsed, currentFrameNumber);
-            }
+            World.UpdateAllChunks(timeElapsed ,currentFrameNumber);
         }
 
         static void SpawnInPlayerCharacters()

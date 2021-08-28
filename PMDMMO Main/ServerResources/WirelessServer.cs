@@ -53,6 +53,7 @@ namespace ServerResources
                     {
                         ci.currentlyConnected = true;
                         ErrorHandler.AddMessageToLog($"Client {ci.address.ToString()} has reconnected.");
+                        ci.thisUsersPokemon.needsChunksResent = true;
                     }
                     break;
                 }
