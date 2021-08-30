@@ -108,17 +108,26 @@ namespace Guildleader
         public List<Chunk> GetAllChunksLoaded()
         {
             List<Chunk> holster = new List<Chunk>();
-            foreach (var kvpxy in allChunks)
+            try
             {
-                foreach (var kvpyz in kvpxy.Value)
+                foreach (var kvpxy in allChunks)
                 {
-                    foreach (Chunk c in kvpyz.Value.Values)
+                    foreach (var kvpyz in kvpxy.Value)
                     {
-                        holster.Add(c);
+                        foreach (Chunk c in kvpyz.Value.Values)
+                        {
+                            holster.Add(c);
+                        }
                     }
                 }
+                return holster;
             }
-            return holster;
+            catch (Exception e)
+            {
+                ErrorHandler.AddErrorToLog(e);
+                return null;
+            }
+
         }
         public void SaveChunkData(Int3 pos, Chunk chu)
         {
