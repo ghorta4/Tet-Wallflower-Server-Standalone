@@ -150,9 +150,13 @@ namespace ServerResources
         public void UpdateAllChunks(float deltaTime, byte currentFrameNumber)
         {
             List<Chunk> allChunksToUpdate = GetAllChunksLoaded();
+            if (allChunksToUpdate == null)
+            {
+                return;
+            }
             foreach (Chunk c in allChunksToUpdate)
             {
-                c.Update(deltaTime, currentFrameNumber);
+                c?.Update(deltaTime, currentFrameNumber);
             }
         }
 
