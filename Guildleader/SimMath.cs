@@ -104,6 +104,22 @@ namespace Guildleader
         }
     }
 
+    public class Int4
+    {
+        public int x, y, z, w;
+        public Int4() { }
+        public Int4(int xg, int yg, int zg, int wg) { x = xg; y = yg; z = zg; w = wg; }
+
+        public static Int4 operator +(Int4 a, Int4 b)
+        {
+            return new Int4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+        }
+        public static Int4 operator -(Int4 a, Int4 b)
+        {
+            return new Int4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+        }
+    }
+
     public static class RNG
     {
         public static float heightRetrieverBasedOnPosition(int x, int y, int seed, int bandwith, float mountainHeight)
