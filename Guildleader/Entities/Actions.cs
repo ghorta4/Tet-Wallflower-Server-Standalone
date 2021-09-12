@@ -8,14 +8,18 @@ namespace Guildleader.Entities
     //handles any and all generic character actions, like moves, digging, crafting, etc
     public class EntityAction
     {
-        readonly Entity caster;
+        public readonly Entity caster;
         readonly float startupTime, sustain, endLag; //the attack, sustain, and release of actions. time until its effects are initiated, time spent on sustained actions, and release time, in that order
         float EndSustainTime { get { return startupTime + sustain; } }
         float TotalActionTime { get { return startupTime + sustain + endLag; } }
 
         float currentTimeIntoAction;
 
-        public Action<Entity> beforeStartupAction, postStartupAction, sustainAction, postSustainAction, postEndAction;
+        public bool canBeSecondaryAction;
+
+        public Action<EntityAction> beforeStartupAction, postStartupAction, sustainAction, postSustainAction, postEndAction;
+
+        public ActionDetails details = new ActionDetails();
 
         CurrentPhase phase;
 
@@ -39,22 +43,22 @@ namespace Guildleader.Entities
             if (phase == CurrentPhase.notYetStarted)
             {
                 phase = CurrentPhase.performingStartup;
-                beforeStartupAction?.Invoke(caster);
+                beforeStartupAction?.Invoke(this);
             }
             if (phase == CurrentPhase.performingStartup && currentTimeIntoAction >= startupTime)
             {
                 phase = CurrentPhase.performingSustain;
-                postStartupAction?.Invoke(caster);
+                postStartupAction?.Invoke(this);
             }
             if (phase == CurrentPhase.performingSustain && currentTimeIntoAction >= EndSustainTime)
             {
                 phase = CurrentPhase.performingEnd;
-                postSustainAction?.Invoke(caster);
+                postSustainAction?.Invoke(this);
             }
             if (phase == CurrentPhase.performingEnd && currentTimeIntoAction >= TotalActionTime)
             {
                 phase = CurrentPhase.finished;
-                postEndAction?.Invoke(caster);
+                postEndAction?.Invoke(this);
             }
             currentTimeIntoAction += timestep;
         }
@@ -62,6 +66,7 @@ namespace Guildleader.Entities
 
     public class ActionDetails
     {
-        public float xyRotation, zRotation; //in degrees
+        public float xyRotation, zRotation; //in degrees for direction aim
+        public Int3 targetCoords; //for positional select
     }
 }

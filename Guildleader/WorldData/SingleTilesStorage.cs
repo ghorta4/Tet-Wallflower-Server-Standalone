@@ -25,21 +25,21 @@ namespace Guildleader
             variant = (short)chosenVariant;
         }
 
-        public byte[] getBytesV1()
+        public byte[] GetBytesV1()
         {
             List<byte> bytes = new List<byte> { };
             bytes.AddRange(Convert.ToByte(tileID));
             bytes.AddRange(Convert.ToByte(tileHealth));
             return bytes.ToArray();
         }
-        public byte[] getBytesSimpleV1()
+        public byte[] GetBytesSimpleV1()
         {
             List<byte> bytes = new List<byte> { };
             bytes.AddRange(Convert.ToByte(tileID));
             return bytes.ToArray();
         }
 
-        public static SingleWorldTile bytesToTileV1(List<byte> data, Int3 pos)
+        public static SingleWorldTile BytesToTileV1(List<byte> data, Int3 pos)
         {
             short tileID = QuickShort(data);
             SingleWorldTile blank = new SingleWorldTile(tileID, pos);
@@ -48,7 +48,7 @@ namespace Guildleader
             data.RemoveRange(0, sizeof(short));
             return blank;
         }
-        public static SingleWorldTile bytesToTileV1Simple(List<byte> data, Int3 pos)
+        public static SingleWorldTile BytesToTileV1Simple(List<byte> data, Int3 pos)
         {
             short tileID = QuickShort(data);
             SingleWorldTile blank = new SingleWorldTile(tileID, pos);
@@ -69,7 +69,7 @@ namespace Guildleader
             
         }
 
-        public TileProperties properties
+        public TileProperties Properties
         {
             get
             {

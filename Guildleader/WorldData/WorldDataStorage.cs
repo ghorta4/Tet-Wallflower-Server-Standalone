@@ -251,6 +251,19 @@ namespace Guildleader
             return new Int3(chunkX, chunkY, chunkZ);
         }
 
+        public static Int3 ConvertWorldCoordsToInteriorChunkPos(Int3 worldPos)
+        {
+            return new Int3(worldPos.x % Chunk.defaultx, worldPos.y % Chunk.defaulty, worldPos.z % Chunk.defaultz);
+        }
+
+        public void SetTileIDAtLocation(Int3 pos, short newTileID)
+        {
+            Int3 interiorPos = ConvertWorldCoordsToInteriorChunkPos(pos);
+            Chunk target = GetChunk(GetChunkPositionBasedOnTilePosition(pos.x, pos.y, pos.z));
+
+            target.GetAllTiles()[interiorPos.x, interiorPos.y, interiorPos.z] = new SingleWorldTile(newTileID, pos);
+        }
+
         //below function marks all players within a range of chunks with a bool that lets them recieve an update. Do this every time a tile is updated
         public void NotifyAllNearbyPlayersOfUpdate(Int3 center, int range)
         {
@@ -457,7 +470,7 @@ namespace Guildleader
                 {
                     for (int k = 0; k < holster.tiles.GetLength(2); k++)
                     {
-                        holster.tiles[i, j, k] = SingleWorldTile.bytesToTileV1(data, new Int3(pos.x * defaultx + i, pos.y * defaulty + j, pos.z * defaultz + k));
+                        holster.tiles[i, j, k] = SingleWorldTile.BytesToTileV1(data, new Int3(pos.x * defaultx + i, pos.y * defaulty + j, pos.z * defaultz + k));
                     }
                 }
             }
@@ -476,7 +489,7 @@ namespace Guildleader
                 {
                     for (int k = 0; k < tiles.GetLength(2); k++)
                     {
-                        temp.AddRange(tiles[i, j, k].getBytesV1());
+                        temp.AddRange(tiles[i, j, k].GetBytesV1());
                     }
                 }
             }
@@ -495,7 +508,7 @@ namespace Guildleader
                 {
                     for (int k = 0; k < holster.tiles.GetLength(2); k++)
                     {
-                        holster.tiles[i, j, k] = SingleWorldTile.bytesToTileV1Simple(data, new Int3(pos.x * defaultx + i, pos.y * defaulty + j, pos.z * defaultz + k));
+                        holster.tiles[i, j, k] = SingleWorldTile.BytesToTileV1Simple(data, new Int3(pos.x * defaultx + i, pos.y * defaulty + j, pos.z * defaultz + k));
                     }
                 }
             }
@@ -513,7 +526,7 @@ namespace Guildleader
                 {
                     for (int k = 0; k < tiles.GetLength(2); k++)
                     {
-                        temp.AddRange(tiles[i, j, k].getBytesSimpleV1());
+                        temp.AddRange(tiles[i, j, k].GetBytesSimpleV1());
                     }
                 }
             }

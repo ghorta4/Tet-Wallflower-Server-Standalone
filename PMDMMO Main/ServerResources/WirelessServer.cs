@@ -96,6 +96,9 @@ namespace ServerResources
                 case PacketType.debugCommands:
                     dp.relevantClient.thisUsersPokemon.ProcessDebugCommand(dp.contents);
                     break;
+                case PacketType.playerCommands:
+                    dp.relevantClient.thisUsersPokemon.ProcessTypicalPlayerCommand(dp.contents);
+                    break;
                 default:
                     ErrorHandler.AddErrorToLog(new Exception("Unhandled packet type: " + dp.stowedPacketType));
                     break;

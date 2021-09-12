@@ -71,7 +71,7 @@ namespace Guildleader.Entities.BasicEntities
                         for (int y = 0; y < occupiedArea.GetLength(1); y++)
                         {
                             SingleWorldTile swt = occupiedArea[x, y, z];
-                            if (!swt.properties.tags.Contains("nonsolid"))
+                            if (!swt.Properties.tags.Contains("nonsolid"))
                             {
                                 goto blockBreak;
                             }
@@ -103,7 +103,7 @@ namespace Guildleader.Entities.BasicEntities
                 bool succeded = true;
                 foreach (SingleWorldTile swt in allInArea)
                 {
-                    if (!swt.properties.tags.Contains("nonsolid"))
+                    if (!swt.Properties.tags.Contains("nonsolid"))
                     {
                         succeded = false;
                         break;

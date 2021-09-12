@@ -34,6 +34,7 @@ namespace Guildleader
             entityIDToTrack, //helps clients adjust their cameras the right way
             requestIDToTrack, //clients requesting the above function; asking for an entity to track
             debugCommands, //temp uses
+            playerCommands
         }
 
         public const int defaultPort = 44500;

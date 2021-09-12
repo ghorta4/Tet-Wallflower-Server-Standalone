@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace Guildleader.Entities.BasicEntities
 {
@@ -47,6 +48,48 @@ namespace Guildleader.Entities.BasicEntities
         public override void ActionsOnChunkChange()
         {
             needsChunksResent = true;
+        }
+
+        public enum PlayerCommand : byte
+        {
+            invalid,
+            move,
+            dig,
+            useMove,
+        }
+        public void ProcessTypicalPlayerCommand(byte[] command)
+        {
+            if (command == null || command.Length <= 0)
+            {
+                return;
+            }
+            byte[] content = command.Skip(1).Take(command.Length - 1).ToArray();
+            PlayerCommand action = (PlayerCommand)command[0];
+            switch(action)
+            {
+                case PlayerCommand.dig:
+                    ProcessPlayerDigCommand(command);
+                    break;
+                case PlayerCommand.invalid:
+                default:
+                    break;
+            }
+        }
+
+        void ProcessPlayerDigCommand(byte[] command)
+        {
+            if (command.Length < sizeof(int) * 3)
+            {
+                return;
+            }
+
+            int[] vals = Convert.ExtractInts(new List<byte>(command), 3);
+
+            Int3 targetPos = new Int3(vals[0], vals[1], vals[2]);
+
+            EntityAction digAction = new EntityAction(this, 2f, 0, 0.2f);
+            digAction.details.targetCoords = targetPos;
+            digAction.postStartupAction = BasicEntityFunctions.DigBlock;
         }
     }
 }
